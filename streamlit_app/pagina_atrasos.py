@@ -415,9 +415,6 @@ def render():
                    "nota de qualidade funcionam como *identificador* do fornecedor, e o atraso grave é uma característica de 3 fornecedores. "
                    "**Só com atributos do pedido o AUC é ≈ 0,5 (acaso)**, e em **fornecedor novo** o modelo não generaliza. O valor dos modelos aqui é "
                    "**diagnóstico**: o que carrega a informação é *quem entrega*. Para operar, uma regra simples de monitoramento por fornecedor faz o mesmo.")
-        with st.expander("Regressão do atraso em dias (MAE/RMSE em dias; R² = parcela explicada)"):
-            st.dataframe(mr.style.format({"MAE": "{:.2f}", "RMSE": "{:.2f}", "R²": "{:.3f}"}), hide_index=True, width="stretch")
-            st.caption("R² negativo = pior que prever a média. Sem o fornecedor, nenhum modelo explica os dias de atraso.")
 
     # ================================================================ 9. Comparação
     with abas[8]:
@@ -478,9 +475,6 @@ def render():
             "- 💡 **Possível risco no estoque (hipótese).** O ponto de reposição cobre cerca de 27 dias de demanda, mas atrasos de 10 a 14 dias poderiam passar disso em 13% dos casos. Não foi medido.\n"
             "- ✅ **Não precisa de modelo complicado.** Os modelos de previsão só acertam quando sabem quem é o fornecedor, e uma regra simples por fornecedor funciona igual. "
             "Os atrasos extremos são reais, não erros: tirá-los esconderia o problema.")
-        if res["insights.csv"] is not None:
-            with st.expander("Ver a tabela técnica completa (com testes estatísticos)"):
-                st.dataframe(res["insights.csv"], hide_index=True, width="stretch")
         st.caption("✅ **Fato** = medido diretamente. 🔗 **Associação** = relação estatística, não prova causa. 💡 **Hipótese** = plausível, mas não medida nesta base.")
         st.markdown("### Recomendações")
         st.markdown(
@@ -497,13 +491,3 @@ def render():
                         "todos os produtos são comprados dos mesmos 20 fornecedores e não há ligação compra↔remessa). *Ausência de evidência não é evidência de ausência.*\n"
                         "- **Hipótese:** exposição de estoque em atrasos de 10–14 dias vs cobertura do ROP.\n"
                         "- **Não mensurável:** custo financeiro, multas, impacto em planejamento e experiência do cliente.")
-        with st.expander("✅ Coerência com o notebook (base completa, sem filtros)"):
-            full = ped[ped.entregue]
-            linhas = [("Entregas analisadas", len(full), K["n_ent"] if K else None),
-                      ("% atrasadas", round(full.atrasado.mean(), 4), round(K["pct_atr"], 4) if K else None),
-                      ("Atraso médio (dias)", round(full.atraso.mean(), 3), round(K["atraso_medio"], 3) if K else None),
-                      ("Atrasos graves (≥ 4 d)", int(full.grave.sum()), K["n_grave"] if K else None)]
-            df = pd.DataFrame(linhas, columns=["indicador", "no app (base completa)", "no notebook"])
-            df["confere"] = np.where(df["no notebook"].isna(), "—", np.where(df.iloc[:, 1].astype(float).round(3) == df["no notebook"].astype(float).round(3), "✅", "❌"))
-            st.dataframe(df.astype(str), hide_index=True, width="stretch")
-            st.caption("O app e o notebook usam o mesmo módulo (`atrasos_lib.py`); esta tabela só confirma que os números são idênticos.")
