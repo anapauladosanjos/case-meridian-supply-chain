@@ -1,0 +1,18 @@
+#,categoria,verificação,afetados,base,problema,decisão,impacto da decisão,% da base
+1,Tipos,Datas lidas como texto no CSV (3 colunas de purchase_order),8807,9000,"O CSV traz datas como texto; sem conversão, não dá para calcular prazos.",Tratar: converter para datetime na cópia tratada (o original continua intacto).,Habilita todos os cálculos de atraso. Sem efeito sobre os números.,97.86
+2,Datas,Datas impossíveis de converter,0,9000,Datas com formato inválido.,Nenhuma ação necessária.,Nenhum registro perdido.,0.0
+3,Ausentes,actual_delivery_date vazio,193,3000,Pedidos sem data de entrega. Coincidem com os pedidos cancelados.,"Tratar separadamente: manter na base, fora das métricas de atraso. Não imputar.","Se contados como 'não atrasados', o % de atraso cairia (ver comparação antes/depois).",6.43
+4,Ausentes,Outras colunas de purchase_order / purchase_order_line / supplier com nulos,0,3000,Campos obrigatórios vazios.,Nenhuma ação necessária.,Nenhum.,0.0
+5,Duplicidade,Linhas duplicadas ou po_id repetido,0,3000,Pedidos repetidos inflariam contagens.,Nenhuma ação necessária.,Nenhum.,0.0
+6,Datas,Prazo prometido anterior à data do pedido,0,3000,Promessa antes do pedido é impossível.,Nenhuma ação necessária.,Nenhum.,0.0
+7,Datas,Entrega real anterior à data do pedido,0,2807,Entrega antes de pedir é impossível.,Nenhuma ação necessária.,Nenhum.,0.0
+8,Datas,Pedido 'Delivered' sem data de entrega,0,3000,Entregue sem data impediria medir o atraso.,Nenhuma ação necessária.,Nenhum.,0.0
+9,Datas,Pedido 'Cancelled' com data de entrega,0,193,Cancelado que aparece como entregue.,Nenhuma ação necessária.,Nenhum.,0.0
+10,Valores,"Valores negativos (quantidades, custo unitário, prazos, mínimos)",0,7460,Quantidades ou custos negativos seriam erro.,Nenhuma ação necessária.,Nenhum.,0.0
+11,Valores,"Qtd. recebida > pedida, ou rejeitada > recebida",0,7460,Inconsistência de quantidades.,Nenhuma ação necessária.,Nenhum.,0.0
+12,Consistência,Prazo prometido diferente do lead time cadastrado do fornecedor,0,3000,A promessa deveria seguir o lead time do cadastro.,Nenhuma ação necessária (promessa = pedido + lead time).,"Confirma que 'prometido' é um prazo contratual, não negociado caso a caso.",0.0
+13,Nomenclatura,"Categorias com grafias diferentes para o mesmo valor (país, tier, categoria, status)",0,3060,Variações de caixa/espaços fragmentariam agrupamentos.,Nenhuma ação necessária (espaços removidos por segurança na cópia tratada).,Nenhum.,0.0
+14,Incompletos,Pedidos sem nenhuma linha de item,0,3000,Pedido sem itens não tem valor nem quantidade.,Nenhuma ação necessária.,Nenhum.,0.0
+15,Incompletos,Pedidos cancelados com itens recebidos,0,7460,Cancelado deveria ter recebido zero.,Nenhuma ação necessária.,Nenhum.,0.0
+16,Extremos,"Atraso acima do limite IQR 1,5x (> 9 dias)",122,2807,Atrasos longos. São eventos reais concentrados em poucos fornecedores (ver seção de outliers).,Manter e tratar separadamente (comparar com e sem).,Remover esconderia exatamente o problema que se quer medir.,4.35
+17,Extremos,Entregas antecipadas (antes do prometido),786,2807,Entrega adiantada não é erro; é um resultado diferente de pontual.,Manter; classificar à parte (Antecipada / Pontual / Atrasada).,Tratar adiantada como pontual esconderia a variabilidade dos prazos.,28.0

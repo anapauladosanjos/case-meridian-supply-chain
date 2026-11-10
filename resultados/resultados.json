@@ -1,0 +1,392 @@
+{
+ "receita": 327234432.35,
+ "mb_pct": 0.42156536275636225,
+ "frete_pct": 0.06440963018053256,
+ "ml_pct": 0.35715573257582967,
+ "frete_total": 21077048.77,
+ "ml_total": 116873653.41000004,
+ "receita_yoy": 0.046179714395492955,
+ "unid_yoy": -0.008140026671361489,
+ "cronicos": [
+  "SUP-04",
+  "SUP-11",
+  "SUP-17"
+ ],
+ "cron_atraso": [
+  7.76551724137931,
+  7.455696202531645,
+  7.584507042253521
+ ],
+ "cron_pct_atraso": [
+  1.0,
+  1.0,
+  1.0
+ ],
+ "cron_pct3": [
+  0.9517241379310345,
+  0.9620253164556962,
+  0.9647887323943662
+ ],
+ "cron_share_dias": 0.5858603361635765,
+ "cron_share_gasto": 0.1587605993629975,
+ "cron_tiers": [
+  "B",
+  "C",
+  "A"
+ ],
+ "cron_rating": [
+  4.33,
+  3.67,
+  4.97
+ ],
+ "normais_atraso_min": 0.28187919463087246,
+ "normais_atraso_max": 0.7659574468085106,
+ "normais_pct3_med": 0.17518248175182483,
+ "atraso_geral": 1.6441040256501602,
+ "pct_atraso_geral": 0.5817598859992875,
+ "n_entregues": 2807,
+ "n_cancelados": 193,
+ "kruskal_p": 2.0415975842016062e-215,
+ "rej_geral": 0.02421311801550765,
+ "rej_min": 0.02266921563738121,
+ "rej_max": 0.025614012632242247,
+ "rho_rating_rej": -0.26917293233082706,
+ "p_rating_rej": 0.25113145369079015,
+ "rho_tier_rej": 0.3560970485810231,
+ "p_tier_rej": 0.12331764229885714,
+ "rho_rating_atraso": -0.09473684210526315,
+ "p_rating_atraso": 0.6911525963694356,
+ "chi2_p": 6.090708925583946e-13,
+ "rating_A": 4.6866666666666665,
+ "rating_C": 2.9466666666666668,
+ "rej_A": 0.023780339992283767,
+ "rej_B": 0.024326804310588316,
+ "rej_C": 0.024626550499757552,
+ "rating_cron_max": 4.97,
+ "rating_top_nome": "SUP-17",
+ "rating_top": 4.97,
+ "rating_top_cron": true,
+ "ss_n": 5,
+ "ss_share_gasto": 0.26169034234848865,
+ "ss_nomes": [
+  "SUP-03",
+  "SUP-05",
+  "SUP-07",
+  "SUP-12",
+  "SUP-19"
+ ],
+ "ss_pior_nome": "SUP-03",
+ "ss_pior_rating": 2.53,
+ "sku_forn_min": 20,
+ "sku_ss_max": 0.30734498458372794,
+ "fas_receita": 4578861.05,
+ "fas_mb_pct": 0.46347321240508055,
+ "fas_frete_pct": 1.1926427249850704,
+ "fas_ml_pct": -0.7291695125799899,
+ "fas_ml": -3338765.8800000004,
+ "fas_share_receita": 0.01399260162543833,
+ "fas_unid_share": 0.20328892460506337,
+ "n_sku_neg": 8,
+ "n_sku": 40,
+ "cat_ml": {
+  "Fasteners": -0.7291695125799899,
+  "Bearings": 0.273802156814618,
+  "Casings": 0.3398097361924523,
+  "Hydraulics": 0.38707339913743855,
+  "Electronics": 0.39689980111837475
+ },
+ "cat_mb": {
+  "Fasteners": 0.46347321240508055,
+  "Bearings": 0.405084670250131,
+  "Casings": 0.40360447332998467,
+  "Hydraulics": 0.4149887042146777,
+  "Electronics": 0.44789358519335026
+ },
+ "cat_frete": {
+  "Fasteners": 1.1926427249850704,
+  "Bearings": 0.131282513435513,
+  "Casings": 0.06379473713753235,
+  "Hydraulics": 0.027915305077239147,
+  "Electronics": 0.05099378407497557
+ },
+ "cat_receita": {
+  "Fasteners": 4578861.05,
+  "Bearings": 23424764.27,
+  "Casings": 60899343.65,
+  "Hydraulics": 151554150.61,
+  "Electronics": 86777312.77
+ },
+ "linhas_ml_neg": 0.1442764101998013,
+ "rho_vol_ml": -0.10300187617260789,
+ "p_vol_ml": 0.5270800636061514,
+ "fas_unid": 400196.0,
+ "unid_min": 380465.0,
+ "unid_max": 414820.0,
+ "fas_receita_kg": 0.712781859705052,
+ "fas_lucro_kg": 0.3303552982615679,
+ "air_share_rec": 0.25417918695987735,
+ "air_share_frete": 0.7623535019224609,
+ "air_frete_pct": 0.1931822495498446,
+ "air_ml_pct": 0.23269047537319773,
+ "outros_frete_pct_max": 0.030597724329666797,
+ "outros_ml_pct_min": 0.39046820628103623,
+ "outros_ml_pct_max": 0.4100015376294101,
+ "frete_air": 16068161.94,
+ "transito_real": {
+  "Air": 5.074666666666666,
+  "Rail": 4.896174863387978,
+  "Road": 4.919340054995417,
+  "Sea": 5.1838111298482294
+ },
+ "no_prazo": {
+  "Air": 0.8613333333333333,
+  "Rail": 0.8661202185792349,
+  "Road": 0.8597616865261228,
+  "Sea": 0.8482293423271501
+ },
+ "transito_tab": {
+  "Air": 1.0,
+  "Rail": 5.0,
+  "Road": 3.0,
+  "Sea": 14.0
+ },
+ "p_modal_criterio": {
+  "priority_tier": 0.0918204022041326,
+  "contract_type": 0.697881300875324,
+  "industry_segment": 0.5334145505421457
+ },
+ "mat_ml": {
+  "Fasteners": {
+   "Air": -3.261367210855849,
+   "Road": -0.1103005095736067,
+   "Rail": 0.10207564766647793,
+   "Sea": 0.2385716660236134
+  },
+  "Bearings": {
+   "Air": 0.01776213797085302,
+   "Road": 0.33393977458210145,
+   "Rail": 0.36288903933698746,
+   "Sea": 0.38020561227006044
+  },
+  "Casings": {
+   "Air": 0.21226066500882565,
+   "Road": 0.3728189121686876,
+   "Rail": 0.38453085885486016,
+   "Sea": 0.3934446205520195
+  },
+  "Electronics": {
+   "Air": 0.2903848067113492,
+   "Road": 0.4251808009023402,
+   "Rail": 0.43227928166683904,
+   "Sea": 0.4340007329716391
+  },
+  "Hydraulics": {
+   "Air": 0.339317422709415,
+   "Road": 0.401340327957895,
+   "Rail": 0.39846273054237,
+   "Sea": 0.41135007281997593
+  }
+ },
+ "corr_frete_modelo": 0.9879219954809398,
+ "cenarios": [
+  {
+   "cenario": "Situação atual",
+   "economia_frete": 0.0,
+   "ml_pct": 0.35715573257582967,
+   "ml_fasteners": -0.7291695125799899,
+   "economia_pct_frete": 0.0
+  },
+  {
+   "cenario": "Todo o Air → Road",
+   "economia_frete": 13497783.67693527,
+   "ml_pct": 0.39840378700580614,
+   "ml_fasteners": 0.021823796476589344,
+   "economia_pct_frete": 0.640401975828197
+  },
+  {
+   "cenario": "Só Fasteners e Bearings → Road",
+   "economia_frete": 5391110.475455107,
+   "ml_pct": 0.3736304978893066,
+   "ml_fasteners": 0.021823796476589344,
+   "economia_pct_frete": 0.2557810884381755
+  },
+  {
+   "cenario": "Todo o Air → Rail",
+   "economia_frete": 14468230.462294513,
+   "ml_pct": 0.4013693880838775,
+   "ml_fasteners": 0.07649137508007714,
+   "economia_pct_frete": 0.6864447969057157
+  },
+  {
+   "cenario": "Só Fasteners e Bearings → Rail",
+   "economia_frete": 5783568.4412866235,
+   "ml_pct": 0.37482981534197535,
+   "ml_fasteners": 0.07649137508007714,
+   "economia_pct_frete": 0.2744012458479795
+  },
+  {
+   "cenario": "Todo o Air → Sea",
+   "economia_frete": 15100249.319544047,
+   "ml_pct": 0.4033007828112317,
+   "ml_fasteners": 0.1120945025043029,
+   "economia_pct_frete": 0.7164309142291768
+  },
+  {
+   "cenario": "Só Fasteners e Bearings → Sea",
+   "economia_frete": 6039162.914703824,
+   "ml_pct": 0.37561088985049107,
+   "ml_fasteners": 0.1120945025043029,
+   "economia_pct_frete": 0.28652791861921684
+  }
+ ],
+ "breakeven": [
+  {
+   "mode": "Air",
+   "frete_por_kg": 2.624,
+   "lucro_bruto_kg_fasteners": 0.33,
+   "sobra_por_kg": -2.294,
+   "viavel": false
+  },
+  {
+   "mode": "Road",
+   "frete_por_kg": 0.42,
+   "lucro_bruto_kg_fasteners": 0.33,
+   "sobra_por_kg": -0.09,
+   "viavel": false
+  },
+  {
+   "mode": "Rail",
+   "frete_por_kg": 0.261,
+   "lucro_bruto_kg_fasteners": 0.33,
+   "sobra_por_kg": 0.069,
+   "viavel": true
+  },
+  {
+   "mode": "Sea",
+   "frete_por_kg": 0.158,
+   "lucro_bruto_kg_fasteners": 0.33,
+   "sobra_por_kg": 0.172,
+   "viavel": true
+  }
+ ],
+ "ago_vs": -0.3824658724815112,
+ "q4_vs": 0.4566650517746458,
+ "ago_24": -0.4050762785617993,
+ "ago_25": -0.35958046049599013,
+ "q4_24": 0.4836477958889258,
+ "q4_25": 0.42978765708811406,
+ "idx_ago_seg": {
+  "Aerospace": 0.6157199425998707,
+  "Automotive": 0.7283700119660788,
+  "Consumer": 0.5705379819903025,
+  "Energy": 0.6362574947114306,
+  "Machinery": 0.42010967390849346
+ },
+ "idx_q4_seg": {
+  "Aerospace": 1.2331362464063278,
+  "Automotive": 1.3376181767004305,
+  "Consumer": 1.4074074074074074,
+  "Energy": 1.1636877065751052,
+  "Machinery": 1.3343100729764048
+ },
+ "idx_ago_cat_range": [
+  0.5926811629140349,
+  0.711523572639328
+ ],
+ "idx_q4_cat_range": [
+  1.2608228459030724,
+  1.3380421166890015
+ ],
+ "unid_rem_ago": 250.94004796163068,
+ "unid_rem_med": 410.6792480861453,
+ "unid_rem_q4": 578.1541995451015,
+ "rem_ago": 417,
+ "rem_med": 375.0,
+ "rop_estatico": true,
+ "oh_jan24": 2009.3125,
+ "oh_2025": 1741.2358072916668,
+ "ruptura_q3": 0.041874999999999996,
+ "ruptura_q4": 0.07192708333333334,
+ "abaixo_q3": 0.18906250000000002,
+ "abaixo_q4": 0.21958333333333335,
+ "estoque_q3": 1792.8301041666668,
+ "estoque_q4": 1781.4533854166666,
+ "ruptura_q4_menos_q3_por_ano": {
+  "2024": 0.029375,
+  "2025": 0.03072916666666666
+ },
+ "abaixo_q4_menos_q3_por_ano": {
+  "2024": 0.01833333333333334,
+  "2025": 0.04270833333333332
+ },
+ "abaixo_geral": 0.18428571428571427,
+ "ruptura_geral": 0.049345238095238095,
+ "rho_dem_rupt": 0.5514242356926398,
+ "p_dem_rupt": 0.0052205576636922,
+ "rho_dem_abaixo": 0.47061424552458175,
+ "p_dem_abaixo": 0.02029021510311845,
+ "rho_dem_rupt_dt": 0.5965217391304348,
+ "p_dem_rupt_dt": 0.002092699070468266,
+ "rho_dem_abaixo_dt": 0.308695652173913,
+ "p_dem_abaixo_dt": 0.1421899144300473,
+ "abaixo_cat": {
+  "Hydraulics": 0.32767857142857143,
+  "Electronics": 0.1880952380952381,
+  "Casings": 0.1449404761904762,
+  "Fasteners": 0.1392857142857143,
+  "Bearings": 0.12142857142857143
+ },
+ "abaixo_abc": {
+  "A": 0.10714285714285714,
+  "B": 0.21349206349206348,
+  "C": 0.21917293233082707
+ },
+ "top_sku": [
+  {
+   "product_code": "HYD-02",
+   "pct_abaixo": 0.6285714285714286,
+   "pct_ruptura": 0.1357142857142857
+  },
+  {
+   "product_code": "ELE-03",
+   "pct_abaixo": 0.49523809523809526,
+   "pct_ruptura": 0.08333333333333333
+  },
+  {
+   "product_code": "HYD-04",
+   "pct_abaixo": 0.45714285714285713,
+   "pct_ruptura": 0.08095238095238096
+  },
+  {
+   "product_code": "HYD-03",
+   "pct_abaixo": 0.4357142857142857,
+   "pct_ruptura": 0.10714285714285714
+  },
+  {
+   "product_code": "HYD-05",
+   "pct_abaixo": 0.4119047619047619,
+   "pct_ruptura": 0.08571428571428572
+  }
+ ],
+ "hyd_receita_share": 0.46313631949312195,
+ "reb": [
+  {
+   "k (excedente = estoque > k × ROP)": 2,
+   "% das semanas-produto com falta em ≥1 armazém": 0.5202380952380953,
+   "% dessas com excedente em outro armazém": 0.917162471395881,
+   "% do déficit coberto só por transferência": 0.7557729067033828
+  },
+  {
+   "k (excedente = estoque > k × ROP)": 3,
+   "% das semanas-produto com falta em ≥1 armazém": 0.5202380952380953,
+   "% dessas com excedente em outro armazém": 0.825629290617849,
+   "% do déficit coberto só por transferência": 0.6268181085811796
+  },
+  {
+   "k (excedente = estoque > k × ROP)": 5,
+   "% das semanas-produto com falta em ≥1 armazém": 0.5202380952380953,
+   "% dessas com excedente em outro armazém": 0.5899313501144164,
+   "% do déficit coberto só por transferência": 0.3121873695465897
+  }
+ ]
+}

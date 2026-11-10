@@ -1,0 +1,413 @@
+{
+ "aud_problemas": 4,
+ "aud_total": 17,
+ "pct_atraso_ingenuo": 0.5443333333333333,
+ "pct_atraso": 0.5817598859992875,
+ "n_ent": 2807,
+ "pct_ant": 0.28001425008906305,
+ "pct_pont": 0.13822586391164945,
+ "pct_atr": 0.5817598859992875,
+ "atraso_medio": 1.6441040256501602,
+ "atraso_mediano": 1.0,
+ "atraso_dp": 3.25455215611278,
+ "atraso_p90": 6.0,
+ "atraso_max": 14,
+ "pct_grave": 0.1435696473102957,
+ "n_grave": 403,
+ "dias_atraso_total": 5771,
+ "sev_geral": 3.533986527862829,
+ "sev_mediana": 3.0,
+ "n_dias_ate3_cada": [
+  370,
+  423
+ ],
+ "cron_nomes": [
+  "SUP-04",
+  "SUP-17",
+  "SUP-11"
+ ],
+ "n_forn": 20,
+ "cron_sev": [
+  7.76551724137931,
+  7.584507042253521,
+  7.455696202531645
+ ],
+ "cron_pct": [
+  1.0,
+  1.0,
+  1.0
+ ],
+ "cron_rel": [
+  0.4314176245210728,
+  1.0835010060362174,
+  0.21301989150090414
+ ],
+ "cron_prazo": [
+  18.0,
+  7.0,
+  35.0
+ ],
+ "cron_tier": [
+  "B",
+  "A",
+  "C"
+ ],
+ "cron_pais": [
+  "USA",
+  "Turkey",
+  "India"
+ ],
+ "cron_share_dias": 0.5858603361635765,
+ "cron_share_gasto": 0.1587605993629975,
+ "cron_share_pedidos": 0.15853224082650516,
+ "nao_pct_min": 0.4161073825503356,
+ "nao_pct_max": 0.574468085106383,
+ "nao_sev_min": 1.8507462686567164,
+ "nao_sev_max": 2.1267605633802815,
+ "nao_atraso_min": 0.28187919463087246,
+ "nao_atraso_max": 0.7659574468085106,
+ "nao_dp_med": 1.7033299251873946,
+ "cron_dp_med": 3.058329696182908,
+ "grave_share_cron": 1.0,
+ "padroes": {
+  "pais": {
+   "nome": "País do fornecedor",
+   "p_todos": 5.413603180216151e-56,
+   "p_sem": 0.9239100303297336,
+   "e_todos": 0.09722642560676671,
+   "e_sem": 0.0008274747253362663
+  },
+  "tier": {
+   "nome": "Tier",
+   "p_todos": 1.4988587077327964e-19,
+   "p_sem": 0.0979765816010271,
+   "e_todos": 0.030894093235846184,
+   "e_sem": 0.0019678329454660384
+  },
+  "single": {
+   "nome": "Fonte única",
+   "p_todos": 2.3277635298944734e-16,
+   "p_sem": 0.8586922425827166,
+   "e_todos": 0.02398554081642293,
+   "e_sem": 1.3425638737202684e-05
+  }
+ },
+ "cat_min": 1.58,
+ "cat_max": 1.74,
+ "tau_tot": [
+  0.07272775357351403,
+  0.619616764674272
+ ],
+ "tau_cro": [
+  -0.18579512371988902,
+  0.20535062890713296
+ ],
+ "tau_nao": [
+  0.057971014492753624,
+  0.7128203407600773
+ ],
+ "p_sazon": 0.682812946891854,
+ "p_sazon_cro": 0.2694285287654572,
+ "p_ano": 0.9507027500969315,
+ "pct_atr_mes_min": 0.49514563106796117,
+ "pct_atr_mes_max": 0.625,
+ "media_24": 1.6825396825396826,
+ "media_25": 1.6066150598170303,
+ "corr_maxabs_nc": 0.03602760481114935,
+ "corr_sig_nc": [],
+ "logit_llr_p": 0.16132042851628306,
+ "logit_pseudo_r2": 0.0032107007056150216,
+ "ols_r2": 0.004245148686467526,
+ "ols_r2_adj": 0.0012841104710067386,
+ "ols_f_p": 0.1595431993647824,
+ "logit_sig": [
+  "dow"
+ ],
+ "ols_sig": [
+  "prazo_prometido"
+ ],
+ "r2_forn": 0.6321830939495452,
+ "r2_cron": 0.6306941672666091,
+ "r2_ped": 0.019316577375703914,
+ "fisher_p": 0.0,
+ "rho_gasto": [
+  0.4857142857142857,
+  0.029920782525592465
+ ],
+ "rho_gasto_nc": [
+  0.5196078431372549,
+  0.03253716699175946
+ ],
+ "rho_vol": [
+  0.32768419690043554,
+  0.15842591559570315
+ ],
+ "rho_custo": [
+  0.40751879699248117,
+  0.0745082158554702
+ ],
+ "idx_custo_cron": [
+  1.0001803360021269,
+  1.0004942309586697,
+  1.0010639412864468
+ ],
+ "idx_custo_min": 0.9941859193106276,
+ "idx_custo_max": 1.0054080395598837,
+ "exp_cron": 0.09662921348314607,
+ "exp_nao": 0.11346316680779,
+ "p_exp": 0.33932213407941725,
+ "valor_cron": 137480.62357303372,
+ "valor_nao": 137245.61779847587,
+ "cron_pedidos_med": 148.33333333333334,
+ "nao_pedidos_med": 138.94117647058823,
+ "rej_cron": 0.02406303036387079,
+ "rej_nao": 0.02424204136251644,
+ "p_rej": 0.5894514582361138,
+ "rho_rej": [
+  0.019688393418153417,
+  0.2970642043446245
+ ],
+ "cob_med": 27.452717645289162,
+ "cob_min": 9.642968409246683,
+ "cob_p25": 17.508711748327364,
+ "cob_max": 70.3138528138528,
+ "cob_lt_cron": 0.0,
+ "cob_lt_max": 0.13125,
+ "n_pares": 160,
+ "painel": {
+  "ruptura": [
+   0.016307450710421598,
+   0.2863032506523412,
+   -0.013668188769265403,
+   0.046283090190108594
+  ],
+  "abaixo do ROP": [
+   0.009834103437912222,
+   0.7048345271657173,
+   -0.04104858163470551,
+   0.06071678851052996
+  ]
+ },
+ "painel_n": 917,
+ "rho_mensal_rup": [
+  0.10968379446640317,
+  0.6183444606587871
+ ],
+ "rho_mensal_abx": [
+  0.04552206895617372,
+  0.836597279912595
+ ],
+ "rho_servico": [
+  -0.10770750988142294,
+  0.6247226057643106
+ ],
+ "on_time_geral": 0.8586666666666667,
+ "cron_maior_gasto": "SUP-11",
+ "est": [
+  {
+   "definição": "Fonte única",
+   "grupo": "estratégico",
+   "fornecedores": 5,
+   "crônicos no grupo": 0,
+   "% atrasado": 0.5013812154696132,
+   "atraso médio (dias)": 0.5317679558011049,
+   "% atraso grave": 0.0
+  },
+  {
+   "definição": "Fonte única",
+   "grupo": "não estratégico",
+   "fornecedores": 15,
+   "crônicos no grupo": 3,
+   "% atrasado": 0.6096975516082573,
+   "atraso médio (dias)": 2.030724915986558,
+   "% atraso grave": 0.19347095535285647
+  },
+  {
+   "definição": "Tier A",
+   "grupo": "estratégico",
+   "fornecedores": 6,
+   "crônicos no grupo": 1,
+   "% atrasado": 0.5740072202166066,
+   "atraso médio (dias)": 1.6835138387484958,
+   "% atraso grave": 0.14921780986762936
+  },
+  {
+   "definição": "Tier A",
+   "grupo": "não estratégico",
+   "fornecedores": 14,
+   "crônicos no grupo": 2,
+   "% atrasado": 0.5850202429149798,
+   "atraso médio (dias)": 1.6275303643724697,
+   "% atraso grave": 0.14119433198380565
+  },
+  {
+   "definição": "Top 25% do gasto",
+   "grupo": "estratégico",
+   "fornecedores": 5,
+   "crônicos no grupo": 1,
+   "% atrasado": 0.6159029649595688,
+   "atraso médio (dias)": 2.0296495956873315,
+   "% atraso grave": 0.1954177897574124
+  },
+  {
+   "definição": "Top 25% do gasto",
+   "grupo": "não estratégico",
+   "fornecedores": 15,
+   "crônicos no grupo": 2,
+   "% atrasado": 0.5694915254237288,
+   "atraso médio (dias)": 1.5055690072639225,
+   "% atraso grave": 0.12493946731234867
+  }
+ ],
+ "out_atraso": {
+  "variável": "Atraso (dias)",
+  "n": 2807,
+  "limite inferior (1,5×IQR)": -7.0,
+  "limite superior (1,5×IQR)": 9.0,
+  "outliers 1,5×IQR": 122,
+  "% 1,5×IQR": 4.35,
+  "outliers 3×IQR": 0,
+  "|z| > 3": 51,
+  "P1": -2.0,
+  "P99": 12.0,
+  "máximo": 14.0
+ },
+ "fo_pct_out": 3,
+ "fo_sev_out": 3,
+ "hi_atraso": 9.0,
+ "n_out_atraso": 122,
+ "pct_out_atraso": 0.04346277164232276,
+ "out_atraso_cron_share": 1.0,
+ "out_atraso_forn": {
+  "SUP-04": 42,
+  "SUP-17": 41,
+  "SUP-11": 39
+ },
+ "ext_datas_ok": true,
+ "ext_status_ok": true,
+ "ext_rel_max": 2.0,
+ "iso_n": 141,
+ "iso_cron_share": 0.6453900709219859,
+ "iso_overlap": 0.3971631205673759,
+ "iso_atraso_med": 8.0,
+ "n_out_valor": 74,
+ "hi_valor": 412866.69999999995,
+ "out_valor_cron_share": 0.1891891891891892,
+ "n_out_itens": 34,
+ "hi_itens": 3724.25,
+ "rho_valor_atraso": 0.013412245535315982,
+ "z3_atraso": 51,
+ "cmp_out": [
+  {
+   "cenário": "Com todos os pedidos",
+   "pedidos": 2807,
+   "% atrasado": 0.5817598859992875,
+   "atraso médio": 1.6441040256501602,
+   "atraso mediano": 1.0,
+   "desvio padrão": 3.25455215611278,
+   "fornecedores crônicos (z>3,5)": "SUP-04, SUP-11, SUP-17"
+  },
+  {
+   "cenário": "Sem outliers IQR de atraso",
+   "pedidos": 2685,
+   "% atrasado": 0.562756052141527,
+   "atraso médio": 1.2003724394785846,
+   "atraso mediano": 1.0,
+   "desvio padrão": 2.544990083657839,
+   "fornecedores crônicos (z>3,5)": "SUP-04, SUP-11, SUP-17"
+  },
+  {
+   "cenário": "Sem sinalizados pelo Isolation Forest",
+   "pedidos": 2666,
+   "% atrasado": 0.567516879219805,
+   "atraso médio": 1.3660915228807202,
+   "atraso mediano": 1.0,
+   "desvio padrão": 2.8645923241126754,
+   "fornecedores crônicos (z>3,5)": "SUP-04, SUP-11, SUP-17"
+  }
+ ],
+ "robusto_cronicos": true,
+ "risco_cont": {
+  "Alto": 3,
+  "Intermediário": 0,
+  "Baixo": 17
+ },
+ "risco_base_mediana": 0.5086694127790019,
+ "sev_limite": 2.4095580552932274,
+ "obs": [
+  "SUP-06",
+  "SUP-18",
+  "SUP-10"
+ ],
+ "obs_z": [
+  0.8116413522313702,
+  0.585207042824791,
+  0.41223592629504835
+ ],
+ "obs_p": [
+  1.0,
+  1.0,
+  1.0
+ ],
+ "k_escolhido": 2,
+ "silhueta": 0.9313871801739098,
+ "silhuetas": {
+  "2": 0.9313871801739098,
+  "3": 0.5354347874105759,
+  "4": 0.45303795736893165,
+  "5": 0.3745734602986776
+ },
+ "k_igual_risco": true,
+ "n_treino": 1386,
+ "n_teste": 1421,
+ "base_grave_treino": 0.14646464646464646,
+ "base_grave_teste": 0.14074595355383532,
+ "regra": {
+  "precisão": 0.9009009009009009,
+  "recall": 1.0,
+  "F1": 0.9478672985781991,
+  "ROC-AUC": 0.9912039312039311,
+  "fornecedores_marcados": [
+   "SUP-04",
+   "SUP-11",
+   "SUP-17"
+  ]
+ },
+ "melhor": {
+  "modelo": "Random Forest",
+  "atributos": "Pedido + atributos do fornecedor",
+  "f1": 0.9478672985781991,
+  "auc": 0.9935053235053235,
+  "prec": 0.9009009009009009,
+  "rec": 1.0
+ },
+ "cm": [
+  [
+   1199,
+   22
+  ],
+  [
+   0,
+   200
+  ]
+ ],
+ "auc_A_gb": 0.48819615069615074,
+ "auc_B_gb": 0.9929381654381655,
+ "auc_atrasado_A": 0.5329249351127098,
+ "auc_atrasado_B": 0.6269645010320655,
+ "lr_B_auc": 0.9906674856674856,
+ "imp_top": [
+  "quality_rating",
+  "pais",
+  "lead_time_days"
+ ],
+ "reg_base_mae": 2.3388738089652943,
+ "reg_A_r2": -0.07103410055748927,
+ "reg_B_r2": 0.6018881272607318,
+ "reg_B_mae": 1.6473650872640377,
+ "reg_logo_r2_max": -0.04880306214889285,
+ "shapiro_p": 1.4670503870063624e-40,
+ "bp_p": 0.17946226977446958,
+ "n_checks_ok": 13,
+ "n_checks": 13
+}

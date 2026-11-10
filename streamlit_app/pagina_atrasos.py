@@ -1,0 +1,492 @@
+"""Aba 'Atrasos de fornecedores' do app Meridian.
+
+Usa a MESMA biblioteca do notebook (atrasos_lib.py), então os números do app e do notebook vêm do mesmo código.
+Os filtros (período, fornecedor, tier, país, urgência) valem para todos os painéis; as tabelas de modelos são
+resultados fixos do notebook (base completa) e NÃO respondem aos filtros, o que está dito na própria aba.
+"""
+import json
+from pathlib import Path
+
+import altair as alt
+import numpy as np
+import pandas as pd
+import streamlit as st
+
+import atrasos_lib as L
+
+AZUL, LARANJA, AMARELO, CINZA, VERDE = "#2a78d6", "#eb6834", "#e8b923", "#b9b8ae", "#1baf7a"
+ESC_RISCO = alt.Scale(domain=["Alto", "Intermediário", "Baixo"], range=[LARANJA, AMARELO, AZUL])
+ESC_CLASSE = alt.Scale(domain=["Antecipada", "Pontual", "Atrasada"], range=[VERDE, CINZA, LARANJA])
+PASTA_RES = Path(__file__).parent / "resultados"
+
+
+def br(v, d=1):
+    return f"{v:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def pc(v, d=0):
+    return br(v * 100, d) + "%"
+
+
+# ------------------------------------------------------------------------------------------------ dados
+@st.cache_data(show_spinner="Preparando a base de atrasos…")
+def base():
+    brutos = L.carregar_brutos(L.localizar_dados())
+    T = L.tratar(brutos)
+    ped = L.base_pedidos(T)
+    return ped, L.auditoria(brutos, T), L.antes_depois(brutos, T, ped)
+
+
+@st.cache_data(show_spinner="Calculando classificação de risco e segmentos…")
+def analise(ped_filtrado):
+    f = L.metricas_fornecedor(ped_filtrado)
+    r = L.classificar_risco(f)
+    try:
+        g, tab_k = L.agrupar(r)
+    except Exception:  # base filtrada pequena demais para agrupar
+        g, tab_k = r.assign(grupo="—"), pd.DataFrame(columns=["k", "inércia", "silhueta"])
+    return r, g, tab_k, float(r.attrs.get("pct_base_mediana", np.nan))
+
+
+@st.cache_data(show_spinner="Ajustando modelos de exemplo (2024 → 2025)…")
+def curvas(ped):
+    from sklearn.ensemble import GradientBoostingClassifier
+    from sklearn.metrics import confusion_matrix, roc_auc_score, roc_curve
+    em = L.matriz_modelo(ped)
+    y = em["grave"].astype(int).values
+    tr, te = (em.ano == 2024).values, (em.ano == 2025).values
+    out = {}
+    for rot, (num, cat) in L.conjuntos_de_atributos().items():
+        pipe = L._pipe(GradientBoostingClassifier(random_state=L.SEED), num, cat).fit(em.loc[tr, num + cat], y[tr])
+        p = pipe.predict_proba(em.loc[te, num + cat])[:, 1]
+        fpr, tpr, _ = roc_curve(y[te], p)
+        out[rot] = dict(fpr=fpr, tpr=tpr, auc=float(roc_auc_score(y[te], p)),
+                        cm=confusion_matrix(y[te], (p >= .5).astype(int)).tolist())
+    imp = L.importancia_permutacao(em, "grave", n_rep=3)
+    return out, imp
+
+
+def carregar_resultados():
+    res = {}
+    for nome in ["modelos_classificacao.csv", "modelos_regressao.csv", "insights.csv"]:
+        p = PASTA_RES / nome
+        res[nome] = pd.read_csv(p) if p.exists() else None
+    p = PASTA_RES / "resultados_atrasos.json"
+    res["K"] = json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    return res
+
+
+@st.cache_data(show_spinner="Rodando os modelos (pode levar ~1 min)…")
+def modelos_na_hora(ped):
+    em = L.matriz_modelo(ped)
+    g, _ = L.avaliar_classificacao(em, "grave")
+    a, _ = L.avaliar_classificacao(em, "atrasado")
+    g.insert(0, "alvo", "grave (≥ 4 dias)")
+    a.insert(0, "alvo", "atrasado (> 0)")
+    return pd.concat([g, a], ignore_index=True), L.avaliar_regressao(em)
+
+
+# ------------------------------------------------------------------------------------------------ página
+def render():
+    ped, aud, antes_depois = base()
+    res = carregar_resultados()
+    K = res["K"]
+
+    st.subheader("Atrasos de fornecedores")
+    st.markdown(
+        "#### Em 1 minuto\n"
+        f"- **{pc(K['pct_atr'], 0)} das entregas chegam depois do prometido**, mas quase sempre por poucos dias "
+        f"(metade atrasa até {br(K['atraso_mediano'], 0)} dia).\n"
+        f"- **O atraso grave (4 dias ou mais) está concentrado em 3 fornecedores**: {', '.join(K['cron_nomes'])}. "
+        f"Eles atrasam em todas as entregas e respondem por {pc(K['cron_share_dias'], 0)} de todos os dias de atraso.\n"
+        "- **Não é o tamanho do pedido, o país nem o tipo de fornecedor**: o que explica o atraso é *quem entrega*.\n"
+        "- **O custo em reais do atraso não pode ser medido** com estes dados, por isso nenhum valor foi estimado.")
+    st.caption("**Como o atraso é medido:** data de entrega real − data prometida (em dias; só pedidos entregues). "
+               "Se prometeu na segunda e entregou na quinta, são 3 dias. Negativo = chegou antes; zero = no dia; "
+               "positivo = atrasou. **Atraso grave = 4 dias ou mais.** *Frequência* é quantas entregas atrasam; "
+               "*gravidade* é quanto atrasam quando atrasam. Os resultados mostram **associações**, não causas.")
+
+    # ---------------- filtros (valem para todos os painéis desta aba) ----------------
+    meses = sorted(ped["ano_mes"].unique())
+    forn_all = sorted(ped["fornecedor"].unique())
+    with st.expander("🔎 Filtros desta aba", expanded=True):
+        c1, c2, c3, c4 = st.columns([1.4, 1.2, 1, 1])
+        periodo = c1.select_slider("Período (mês do pedido)", options=meses, value=(meses[0], meses[-1]))
+        sel_forn = c2.multiselect("Fornecedor (vazio = todos)", forn_all)
+        tiers = c3.multiselect("Tier", sorted(ped["tier"].unique()))
+        paises = c4.multiselect("País", sorted(ped["pais"].unique()))
+        urg = st.radio("Urgência do pedido", ["Todos", "Só urgentes (expedited)", "Só normais"], horizontal=True)
+        st.caption("O **período** e a **urgência** definem a base usada no cálculo (inclusive risco e segmentos, "
+                   "recalculados sobre os 20 fornecedores). **Fornecedor, tier e país** escolhem o que é exibido, "
+                   "sem alterar a classificação dos demais.")
+
+    d = ped[(ped.ano_mes >= periodo[0]) & (ped.ano_mes <= periodo[1])]
+    if urg.startswith("Só urgentes"):
+        d = d[d.expedited == 1]
+    elif urg.startswith("Só normais"):
+        d = d[d.expedited == 0]
+    ent = d[d.entregue].copy()
+    if len(ent) < 100:
+        st.warning("Poucos pedidos entregues no filtro atual (< 100): amplie o período ou a urgência.")
+        return
+
+    r, g, tab_k, base_mediana = analise(d)
+    visiveis = set(r.fornecedor)
+    if sel_forn:
+        visiveis &= set(sel_forn)
+    if tiers:
+        visiveis &= set(r[r.tier.isin(tiers)].fornecedor)
+    if paises:
+        visiveis &= set(r[r.pais.isin(paises)].fornecedor)
+    if not visiveis:
+        st.warning("Nenhum fornecedor atende aos filtros escolhidos.")
+        return
+    risco_de = r.set_index("fornecedor")["risco"].to_dict()
+    ent["risco"] = ent.fornecedor.map(risco_de)
+    ev = ent[ent.fornecedor.isin(visiveis)].copy()   # entregas dos fornecedores exibidos
+    rv = r[r.fornecedor.isin(visiveis)].copy()
+
+    abas = st.tabs(["Indicadores gerais", "Ranking", "Evolução", "Distribuição", "Casos extremos", "Grupos de fornecedores",
+                    "Matriz de risco", "Previsão", "Comparar fornecedores", "Conclusões e recomendações"])
+
+    # ================================================================ 1. Indicadores gerais
+    with abas[0]:
+        k = st.columns(6)
+        k[0].metric("Entregas analisadas", br(len(ev), 0))
+        k[1].metric("% atrasadas", pc(ev.atrasado.mean(), 1))
+        k[2].metric("% pontuais", pc((ev.atraso == 0).mean(), 1))
+        k[3].metric("% antecipadas", pc((ev.atraso < 0).mean(), 1))
+        k[4].metric("Atraso mediano", f"{br(ev.atraso.median(), 0)} dia(s)")
+        k[5].metric("% atraso grave (4+ dias)", pc(ev.grave.mean(), 1))
+        k = st.columns(4)
+        k[0].metric("Atraso médio", f"{br(ev.atraso.mean(), 2)} dias")
+        k[1].metric("Atraso nos 10% piores casos", f"{br(ev.atraso.quantile(.9), 0)} dias")
+        atr = ev[ev.atraso > 0]
+        k[2].metric("Atraso médio, só das atrasadas", f"{br(atr.atraso.mean(), 1)} dias" if len(atr) else "—")
+        k[3].metric("Total de dias de atraso", br(atr.atraso.sum(), 0))
+        cl = ev.assign(classe=lambda x: np.select([x.atraso < 0, x.atraso == 0], ["Antecipada", "Pontual"], "Atrasada"))
+        cc = cl.groupby("classe").size().rename("n").reset_index()
+        cc["pct"] = cc.n / cc.n.sum()
+        st.altair_chart(alt.Chart(cc).mark_bar().encode(
+            y=alt.Y("classe:N", sort=["Antecipada", "Pontual", "Atrasada"], title=None),
+            x=alt.X("pct:Q", axis=alt.Axis(format="%"), title="% das entregas"),
+            color=alt.Color("classe:N", scale=ESC_CLASSE, legend=None),
+            tooltip=["classe", "n", alt.Tooltip("pct:Q", format=".1%")]).properties(height=140), width="stretch")
+        n_alto = int((rv.risco == "Alto").sum())
+        st.info(f"Entre os fornecedores exibidos, **{n_alto}** estão classificados como **alto risco** no período. "
+                f"Atraso grave: **{int(ev.grave.sum())}** entregas ({pc(ev.grave.mean(), 1)}).")
+        with st.expander("🧪 Dá para confiar nos dados? (3.000 pedidos)"):
+            st.markdown("Nada foi excluído: a cópia tratada só converte tipos (datas em texto → datetime). "
+                        "Cancelados ficam à parte (sem data de entrega, não entram nas métricas de atraso).")
+            st.dataframe(aud.drop(columns=["#"]), hide_index=True, width="stretch")
+            st.markdown("**Antes × depois do tratamento**")
+            st.dataframe(antes_depois.astype(str), hide_index=True, width="stretch")
+
+    # ================================================================ 2. Ranking
+    with abas[1]:
+        st.markdown("**Quem atrasa mais?** À esquerda, quantos dias atrasa quando atrasa; à direita, em quantas entregas atrasa.")
+        ordem = rv.sort_values("severidade", ascending=False)
+        c1, c2 = st.columns(2)
+        c1.altair_chart(alt.Chart(ordem).mark_bar().encode(
+            y=alt.Y("fornecedor:N", sort=alt.EncodingSortField("severidade", order="descending"), title=None),
+            x=alt.X("severidade:Q", title="Dias de atraso, quando atrasa"),
+            color=alt.Color("risco:N", scale=ESC_RISCO, legend=alt.Legend(title="Risco")),
+            tooltip=["fornecedor", "tier", "pais", alt.Tooltip("severidade:Q", format=".1f"),
+                     alt.Tooltip("pct_atrasado:Q", format=".0%"), "pedidos"]).properties(height=22 * len(ordem) + 40,
+                                                                                  title="Gravidade"), width="stretch")
+        c2.altair_chart(alt.Chart(ordem).mark_bar().encode(
+            y=alt.Y("fornecedor:N", sort=alt.EncodingSortField("severidade", order="descending"), title=None),
+            x=alt.X("pct_atrasado:Q", axis=alt.Axis(format="%"), title="% das entregas atrasadas", scale=alt.Scale(domain=[0, 1])),
+            color=alt.Color("risco:N", scale=ESC_RISCO, legend=None),
+            tooltip=["fornecedor", alt.Tooltip("pct_atrasado:Q", format=".0%"), "pedidos"]).properties(
+            height=22 * len(ordem) + 40, title="Frequência"), width="stretch")
+        tab = ordem[["fornecedor", "risco", "tier", "pais", "pedidos", "pct_antecipado", "pct_pontual", "pct_atrasado",
+                     "atraso_medio", "atraso_mediano", "severidade", "desvio", "p90", "maximo", "pct_grave",
+                     "share_dias_atraso", "share_gasto"]]
+        tab.columns = ["fornecedor", "risco", "tier", "país", "pedidos", "% antecip.", "% pontual", "% atrasado", "atraso médio",
+                       "mediana", "severidade", "desvio padrão", "P90", "máx.", "% grave", "% dos dias de atraso", "% do gasto"]
+        st.dataframe(tab.style.format({"% antecip.": "{:.0%}", "% pontual": "{:.0%}", "% atrasado": "{:.0%}", "atraso médio": "{:.2f}", "mediana": "{:.1f}",
+                                       "severidade": "{:.1f}", "desvio padrão": "{:.1f}", "P90": "{:.1f}", "% grave": "{:.0%}",
+                                       "% dos dias de atraso": "{:.1%}", "% do gasto": "{:.1%}"}), hide_index=True, width="stretch")
+        st.caption("Desvio padrão e P90 medem a **imprevisibilidade** do prazo. "
+                   "Fornecedor consistente = desvio baixo; imprevisível = desvio e P90 altos.")
+
+    # ================================================================ 3. Evolução
+    with abas[2]:
+        m = ev.groupby("ano_mes").agg(pct_atrasado=("atrasado", "mean"), atraso_medio=("atraso", "mean"), n=("po_id", "count")).reset_index()
+        c1, c2 = st.columns(2)
+        c1.altair_chart(alt.Chart(m).mark_line(point=True, color=AZUL).encode(
+            x=alt.X("ano_mes:O", title="Mês do pedido", axis=alt.Axis(labelAngle=-45)),
+            y=alt.Y("pct_atrasado:Q", axis=alt.Axis(format="%"), title="% atrasadas", scale=alt.Scale(zero=False)),
+            tooltip=["ano_mes", alt.Tooltip("pct_atrasado:Q", format=".1%"), "n"]).properties(height=300, title="% de entregas atrasadas por mês"),
+            width="stretch")
+        gp = ev.assign(grupo=np.where(ev.risco == "Alto", "Alto risco", "Demais")).groupby(["ano_mes", "grupo"]).atraso.mean().reset_index()
+        c2.altair_chart(alt.Chart(gp).mark_line(point=True).encode(
+            x=alt.X("ano_mes:O", title="Mês do pedido", axis=alt.Axis(labelAngle=-45)),
+            y=alt.Y("atraso:Q", title="Atraso médio (dias)"),
+            color=alt.Color("grupo:N", scale=alt.Scale(domain=["Alto risco", "Demais"], range=[LARANJA, AZUL]), legend=alt.Legend(title=None)),
+            tooltip=["ano_mes", "grupo", alt.Tooltip("atraso:Q", format=".2f")]).properties(height=300, title="Atraso médio: alto risco × demais"),
+            width="stretch")
+        if len(m) >= 8:
+            from scipy import stats as sp
+            tau = sp.kendalltau(np.arange(len(m)), m.pct_atrasado)
+            st.caption(f"Tendência da % de atrasadas (Kendall): τ = {br(tau.statistic, 2)}, p = {br(tau.pvalue, 2)}. "
+                       f"{'Sem tendência estatisticamente detectável.' if tau.pvalue > .05 else 'Há tendência estatisticamente detectável.'} "
+                       "Com 24 meses não se justifica modelo de séries temporais (ARIMA/Prophet); a leitura é descritiva.")
+        st.markdown("**Por fornecedor** (até 6 escolhidos)")
+        esc = sel_forn[:6] if sel_forn else rv.sort_values("severidade", ascending=False).fornecedor.head(3).tolist() + \
+            rv.sort_values("severidade").fornecedor.head(1).tolist()
+        pf = ev[ev.fornecedor.isin(esc)].groupby(["ano_mes", "fornecedor"]).atraso.mean().reset_index()
+        st.altair_chart(alt.Chart(pf).mark_line(point=True).encode(
+            x=alt.X("ano_mes:O", title="Mês do pedido", axis=alt.Axis(labelAngle=-45)), y=alt.Y("atraso:Q", title="Atraso médio (dias)"),
+            color=alt.Color("fornecedor:N", legend=alt.Legend(title=None)),
+            tooltip=["ano_mes", "fornecedor", alt.Tooltip("atraso:Q", format=".2f")]).properties(height=300), width="stretch")
+
+    # ================================================================ 4. Distribuição
+    with abas[3]:
+        h = ev.groupby("atraso").size().rename("n").reset_index()
+        h["classe"] = np.select([h.atraso < 0, h.atraso == 0], ["Antecipada", "Pontual"], "Atrasada")
+        h["pct"] = h.n / h.n.sum()
+        c1, c2 = st.columns([1.1, 1])
+        c1.altair_chart(alt.Chart(h).mark_bar().encode(
+            x=alt.X("atraso:O", title="Atraso (dias)"), y=alt.Y("n:Q", title="Entregas"),
+            color=alt.Color("classe:N", scale=ESC_CLASSE, legend=alt.Legend(title=None)),
+            tooltip=["atraso", "n", alt.Tooltip("pct:Q", format=".1%")]).properties(height=320, title="Distribuição do atraso"), width="stretch")
+        bx = ev.copy()
+        ordem_b = bx.groupby("fornecedor").atraso.median().sort_values().index.tolist()
+        c2.altair_chart(alt.Chart(bx).mark_boxplot(extent=1.5).encode(
+            y=alt.Y("fornecedor:N", sort=ordem_b, title=None), x=alt.X("atraso:Q", title="Atraso (dias)"),
+            color=alt.Color("risco:N", scale=ESC_RISCO, legend=None)).properties(height=max(320, 18 * bx.fornecedor.nunique() + 40),
+                                                                              title="Boxplot por fornecedor"), width="stretch")
+        s = ev.atraso
+        st.dataframe(pd.DataFrame({"média": [s.mean()], "mediana": [s.median()], "desvio padrão": [s.std()], "P10": [s.quantile(.1)],
+                                   "P90": [s.quantile(.9)], "P99": [s.quantile(.99)], "máximo": [s.max()],
+                                   "assimetria": [s.skew()]}).round(2), hide_index=True, width="stretch")
+        st.caption("Entre −2 e +3 dias cada valor tem frequência parecida (variação do dia a dia); a partir de 4 dias há uma queda de patamar: "
+                   "é a cauda de atrasos graves, que se concentra em poucos fornecedores.")
+
+    # ================================================================ 5. Outliers
+    with abas[4]:
+        st.markdown("Nada é removido automaticamente: cada método **sinaliza**, e o julgamento (erro × evento real) está explicado abaixo.")
+        lo, hi = L.limites_iqr(ent.atraso)
+        ent["out_iqr"] = (ent.atraso < lo) | (ent.atraso > hi)
+        iso = L.isolation(d, 0.05)
+        iso_ids = set(iso[iso.iso_outlier].po_id)
+        ev_o = ev.assign(out_iqr=(ev.atraso < lo) | (ev.atraso > hi), out_iso=ev.po_id.isin(iso_ids))
+        z = (ev.atraso - ent.atraso.mean()) / ent.atraso.std()
+        k = st.columns(4)
+        k[0].metric("Limite superior IQR (1,5×)", f"{br(hi, 1)} dias")
+        k[1].metric("Outliers IQR (atraso)", f"{int(ev_o.out_iqr.sum())} ({pc(ev_o.out_iqr.mean(), 1)})")
+        k[2].metric("|z| > 3", int((z.abs() > 3).sum()))
+        k[3].metric("Isolation Forest (5%)", int(ev_o.out_iso.sum()))
+        c1, c2 = st.columns(2)
+        rng = np.random.default_rng(L.SEED)
+        pts = ev_o.assign(x=ev_o.prazo_prometido + rng.normal(0, .25, len(ev_o)), y=ev_o.atraso + rng.normal(0, .12, len(ev_o)))
+        c1.altair_chart(alt.Chart(pts).mark_circle(size=22, opacity=.6).encode(
+            x=alt.X("x:Q", title="Prazo prometido (dias)"), y=alt.Y("y:Q", title="Atraso (dias)"),
+            color=alt.Color("out_iso:N", scale=alt.Scale(domain=[True, False], range=[LARANJA, "#9cc3f0"]), legend=alt.Legend(title="Isolation Forest")),
+            tooltip=["fornecedor", "po_id", "atraso", "prazo_prometido"]).properties(height=300, title="Pedidos sinalizados (laranja)"), width="stretch")
+        por = ev_o[ev_o.out_iqr].groupby("fornecedor").size().rename("n").reset_index()
+        if len(por):
+            c2.altair_chart(alt.Chart(por).mark_bar(color=LARANJA).encode(
+                y=alt.Y("fornecedor:N", sort="-x", title=None), x=alt.X("n:Q", title="Outliers de atraso (IQR)"),
+                tooltip=["fornecedor", "n"]).properties(height=300, title="Quem produz os atrasos extremos"), width="stretch")
+        else:
+            c2.info("Nenhum outlier de atraso (IQR) nos filtros atuais.")
+        resumo = L.resumo_outliers(ent.assign(tempo_entrega=ent.prazo_prometido + ent.atraso),
+                                   {"Atraso (dias)": "atraso", "Tempo de entrega real (dias)": "tempo_entrega",
+                                    "Valor do pedido": "valor", "Itens": "itens"})
+        st.dataframe(resumo, hide_index=True, width="stretch")
+        st.markdown("**Com × sem outliers** (comparação de sensibilidade; a base não é alterada)")
+        sem = ev_o[~ev_o.out_iqr]
+        cmp_ = pd.DataFrame({"cenário": ["Com todos", "Sem outliers IQR de atraso"],
+                             "entregas": [len(ev_o), len(sem)], "% atrasadas": [ev_o.atrasado.mean(), sem.atrasado.mean()],
+                             "atraso médio": [ev_o.atraso.mean(), sem.atraso.mean()], "atraso mediano": [ev_o.atraso.median(), sem.atraso.median()],
+                             "desvio padrão": [ev_o.atraso.std(), sem.atraso.std()]})
+        st.dataframe(cmp_.style.format({"% atrasadas": "{:.1%}", "atraso médio": "{:.2f}", "atraso mediano": "{:.1f}", "desvio padrão": "{:.2f}"}),
+                     hide_index=True, width="stretch")
+        st.success("**Julgamento:** os atrasos extremos são **eventos reais** (datas coerentes, status Delivered, concentrados em poucos "
+                   "fornecedores, recorrentes em todos os meses), não erros de digitação. Removê-los esconderia exatamente o problema que se "
+                   "quer medir; por isso foram **mantidos e analisados à parte**. Valores/quantidades altos são pedidos grandes plausíveis.")
+
+    # ================================================================ 6. Segmentação
+    with abas[5]:
+        st.markdown("**Risco de atraso** (critérios estatísticos explícitos) e **segmentos K-Means** (perfil de comportamento).")
+        sev_lim = float(r.severidade.median() + 3.5 * np.median(np.abs(r.severidade - r.severidade.median())) / 0.6745)
+        c = r.risco.value_counts().reindex(["Alto", "Intermediário", "Baixo"]).fillna(0).astype(int)
+        k = st.columns(3)
+        k[0].metric("🔴 Alto risco", int(c["Alto"]))
+        k[1].metric("🟡 Intermediário", int(c["Intermediário"]))
+        k[2].metric("🔵 Baixo risco", int(c["Baixo"]))
+        st.caption(f"**Alto** = gravidade atípica (atraso médio quando atrasa com z modificado > 3,5, limite ≈ {br(sev_lim, 1)} dias) **e** "
+                   f"frequência acima da mediana ({pc(base_mediana)}) com significância (binomial unilateral, correção de Holm, α = 5%). "
+                   "**Intermediário** = apenas um dos dois. **Baixo** = nenhum.")
+        crit = rv.assign(o=rv.risco.map({"Alto": 0, "Intermediário": 1, "Baixo": 2})).sort_values(["o", "severidade"], ascending=[True, False])
+        st.dataframe(crit[["fornecedor", "risco", "tier", "pais", "pedidos", "pct_atrasado", "severidade", "z_severidade", "p_frequencia", "share_gasto"]]
+                     .rename(columns={"pais": "país", "pct_atrasado": "% atrasado", "z_severidade": "z mod. severidade", "p_frequencia": "p (freq., Holm)",
+                                      "share_gasto": "% do gasto"}).style.format(
+            {"% atrasado": "{:.0%}", "severidade": "{:.1f}", "z mod. severidade": "{:.1f}", "p (freq., Holm)": "{:.1e}", "% do gasto": "{:.1%}"}),
+            hide_index=True, width="stretch")
+        if len(tab_k):
+            ksel = int(g.grupo.nunique())
+            st.markdown(f"**Segmentos K-Means** (atributos padronizados: % atrasado, severidade, desvio, P90). k = **{ksel}** escolhido pela silhueta "
+                        "(quanto maior, mais coesos e separados os grupos).")
+            c1, c2 = st.columns([1, 1.6])
+            c1.dataframe(tab_k.style.format({"inércia": "{:.1f}", "silhueta": "{:.3f}"}), hide_index=True, width="stretch")
+            perfil = g.groupby("grupo").agg(fornecedores=("fornecedor", "count"), pct_atrasado=("pct_atrasado", "mean"), severidade=("severidade", "mean"),
+                                            desvio=("desvio", "mean"), gasto=("share_gasto", "sum")).reset_index()
+            c2.dataframe(perfil.style.format({"pct_atrasado": "{:.0%}", "severidade": "{:.1f}", "desvio": "{:.1f}", "gasto": "{:.0%}"}),
+                         hide_index=True, width="stretch")
+            st.caption("Perfis em linguagem simples: grupo de maior severidade = *atrasa sempre e por muito tempo*; "
+                       "demais = *atraso curto e aleatório, perto de metade das entregas*.")
+
+    # ================================================================ 7. Matriz de risco
+    with abas[6]:
+        sev_lim = float(r.severidade.median() + 3.5 * np.median(np.abs(r.severidade - r.severidade.median())) / 0.6745)
+        mm = r.assign(destaque=r.fornecedor.isin(visiveis))
+        pontos = alt.Chart(mm).mark_circle(stroke="white", strokeWidth=1.2).encode(
+            x=alt.X("pct_atrasado:Q", axis=alt.Axis(format="%"), title="Frequência: % das entregas atrasadas", scale=alt.Scale(domain=[.3, 1.05])),
+            y=alt.Y("severidade:Q", title="Gravidade: atraso médio quando atrasa (dias)", scale=alt.Scale(domain=[0, 10])),
+            size=alt.Size("share_gasto:Q", legend=alt.Legend(title="% do gasto", format=".0%"), scale=alt.Scale(range=[150, 1100])),
+            color=alt.Color("risco:N", scale=ESC_RISCO, legend=alt.Legend(title="Risco")),
+            opacity=alt.condition("datum.destaque", alt.value(.9), alt.value(.18)),
+            tooltip=["fornecedor", "risco", "tier", "pais", alt.Tooltip("pct_atrasado:Q", format=".0%"), alt.Tooltip("severidade:Q", format=".1f"),
+                     alt.Tooltip("share_gasto:Q", format=".1%")])
+        linhas = alt.Chart(pd.DataFrame({"y": [sev_lim]})).mark_rule(color="#e34948", strokeDash=[5, 4]).encode(y="y:Q") + \
+            alt.Chart(pd.DataFrame({"x": [base_mediana]})).mark_rule(color=CINZA, strokeDash=[2, 3]).encode(x="x:Q")
+        rot = alt.Chart(mm[(mm.risco == "Alto")]).mark_text(align="right", dx=-12, fontSize=11).encode(
+            x="pct_atrasado:Q", y="severidade:Q", text="fornecedor:N")
+        st.altair_chart((linhas + pontos + rot).properties(height=460, title="Matriz de risco: frequência × gravidade (bolha = % do gasto)"), width="stretch")
+        st.caption(f"Linha vermelha: limite de gravidade (≈ {br(sev_lim, 1)} dias). Linha cinza: mediana da frequência dos 20 fornecedores. "
+                   "Fornecedores fora dos filtros de fornecedor/tier/país aparecem esmaecidos.")
+        top = r.sort_values("dias_atraso_total", ascending=False).head(8)
+        st.altair_chart(alt.Chart(top).mark_bar().encode(
+            y=alt.Y("fornecedor:N", sort="-x", title=None), x=alt.X("dias_atraso_total:Q", title="Dias de atraso acumulados"),
+            color=alt.Color("risco:N", scale=ESC_RISCO, legend=None),
+            tooltip=["fornecedor", "risco", alt.Tooltip("dias_atraso_total:Q", format=",.0f"), alt.Tooltip("share_gasto:Q", format=".1%")]
+        ).properties(height=260, title="Exposição: onde estão os dias de atraso"), width="stretch")
+        st.caption("O risco mede atraso. Exposição financeira (tamanho da bolha) é lida à parte: a base não traz custo do atraso (multas, "
+                   "frete urgente, ruptura), então **nenhum valor em R$ é atribuído aos atrasos**.")
+
+    # ================================================================ 8. Modelos
+    with abas[7]:
+        st.info("🔒 **Resultados fixos do notebook (base completa; treino 2024 → teste 2025).** Não respondem aos filtros desta aba, "
+                "porque um modelo comparável exige sempre a mesma base de treino.")
+        mc, mr = res["modelos_classificacao.csv"], res["modelos_regressao.csv"]
+        if mc is None or mr is None:
+            mc, mr = modelos_na_hora(ped)
+        st.markdown("##### Em uma frase por modelo")
+        st.markdown("- **Regressão logística:** soma ponderada de fatores que vira uma probabilidade; simples e explicável.\n"
+                    "- **Árvore de decisão:** sequência de perguntas sim/não; fácil de mostrar a um gestor.\n"
+                    "- **Random Forest:** muitas árvores votando; capta interações.\n"
+                    "- **Gradient Boosting:** árvores pequenas corrigindo os erros umas das outras; geralmente o mais preciso em tabelas.\n"
+                    "- **Linha de base:** sempre prever a classe mais comum. Um modelo só vale se vencer isso em validação honesta.")
+        alvo = st.radio("O que prever?", ["grave (≥ 4 dias)", "atrasado (> 0)"], horizontal=True)
+        val = st.radio("Como validar?", ["Temporal (2024→2025)", "Aleatória (5-fold)", "Fornecedor novo (leave-one-supplier-out)"], horizontal=True)
+        sub = mc[(mc.alvo == alvo) & (mc.validação == val)].copy()
+        met = st.radio("Métrica", ["F1", "ROC-AUC", "precisão", "recall"], horizontal=True)
+        if sub[met].notna().any():
+            st.altair_chart(alt.Chart(sub).mark_bar().encode(
+                y=alt.Y("modelo:N", title=None, sort=None), x=alt.X(f"{met}:Q", scale=alt.Scale(domain=[0, 1]), title=met),
+                yOffset="atributos:N", color=alt.Color("atributos:N", scale=alt.Scale(range=[LARANJA, AZUL]), legend=alt.Legend(title="Atributos")),
+                tooltip=["modelo", "atributos", alt.Tooltip(f"{met}:Q", format=".3f")]).properties(height=330), width="stretch")
+        else:
+            st.warning("O ROC-AUC não é calculado no esquema 'fornecedor novo' (mistura 20 modelos diferentes); escolha outra métrica.")
+        st.dataframe(sub.drop(columns=["alvo", "validação"]).style.format({"precisão": "{:.2f}", "recall": "{:.2f}", "F1": "{:.2f}", "ROC-AUC": "{:.3f}"}, na_rep="—"),
+                     hide_index=True, width="stretch")
+        cv, imp = curvas(ped)
+        c1, c2 = st.columns(2)
+        roc = pd.concat([pd.DataFrame({"fpr": v["fpr"], "tpr": v["tpr"], "modelo": f"{kk} (AUC {br(v['auc'], 2)})"}) for kk, v in cv.items()])
+        c1.altair_chart((alt.Chart(roc).mark_line().encode(x=alt.X("fpr:Q", title="Falsos positivos (taxa)"), y=alt.Y("tpr:Q", title="Verdadeiros positivos (taxa)"),
+                                                           color=alt.Color("modelo:N", legend=alt.Legend(title=None, orient="bottom"))) +
+                         alt.Chart(pd.DataFrame({"x": [0, 1], "y": [0, 1]})).mark_line(color=CINZA, strokeDash=[3, 3]).encode(x="x:Q", y="y:Q")
+                         ).properties(height=320, title="Curva ROC (Gradient Boosting, atraso grave, teste 2025)"), width="stretch")
+        imp_ = imp.head(7).copy()
+        imp_["tipo"] = np.where(imp_.atributo.isin(L.NUM_FORN + L.CAT_FORN), "fornecedor", "pedido")
+        c2.altair_chart(alt.Chart(imp_).mark_bar().encode(
+            y=alt.Y("atributo:N", sort="-x", title=None), x=alt.X("queda_AUC:Q", title="Queda do AUC ao embaralhar"),
+            color=alt.Color("tipo:N", scale=alt.Scale(domain=["fornecedor", "pedido"], range=[LARANJA, "#9cc3f0"]), legend=alt.Legend(title="Atributo do")),
+            tooltip=["atributo", alt.Tooltip("queda_AUC:Q", format=".3f")]).properties(height=320, title="Importância por permutação"), width="stretch")
+        cm = np.array(cv["Pedido + atributos do fornecedor"]["cm"])
+        st.markdown(f"**Matriz de confusão** (Gradient Boosting com cadastro do fornecedor, teste 2025): {cm[1, 1]} graves detectados, "
+                    f"{cm[1, 0]} perdidos, {cm[0, 1]} alarmes falsos, {cm[0, 0]} corretos como não grave.")
+        st.warning("**Como ler (importante):** com o cadastro do fornecedor o modelo vai muito bem, mas isso **não é previsão inteligente**: país, tier e "
+                   "nota de qualidade funcionam como *identificador* do fornecedor, e o atraso grave é uma característica de 3 fornecedores. "
+                   "**Só com atributos do pedido o AUC é ≈ 0,5 (acaso)**, e em **fornecedor novo** o modelo não generaliza. O valor dos modelos aqui é "
+                   "**diagnóstico**: o que carrega a informação é *quem entrega*. Para operar, uma regra simples de monitoramento por fornecedor faz o mesmo.")
+        with st.expander("Regressão do atraso em dias (MAE/RMSE em dias; R² = parcela explicada)"):
+            st.dataframe(mr.style.format({"MAE": "{:.2f}", "RMSE": "{:.2f}", "R²": "{:.3f}"}), hide_index=True, width="stretch")
+            st.caption("R² negativo = pior que prever a média. Sem o fornecedor, nenhum modelo explica os dias de atraso.")
+
+    # ================================================================ 9. Comparação
+    with abas[8]:
+        st.markdown("**Compare o desempenho** de fornecedores específicos com o grupo de baixo risco.")
+        opc = sorted(r.fornecedor)
+        padrao = r[r.risco == "Alto"].fornecedor.tolist()[:2] or opc[:2]
+        esc = st.multiselect("Fornecedores a comparar", opc, default=padrao)
+        if esc:
+            base_cmp = ent.assign(grupo=np.where(ent.fornecedor.isin(esc), ent.fornecedor, np.where(ent.risco == "Baixo", "Média dos de baixo risco", "outros")))
+            base_cmp = base_cmp[base_cmp.grupo != "outros"]
+            comp = base_cmp.groupby("grupo").agg(entregas=("po_id", "count"), pct_atrasado=("atrasado", "mean"), atraso_medio=("atraso", "mean"),
+                                                 mediana=("atraso", "median"), p90=("atraso", lambda s: s.quantile(.9)), desvio=("atraso", "std"),
+                                                 pct_grave=("grave", "mean")).reset_index()
+            st.dataframe(comp.style.format({"pct_atrasado": "{:.0%}", "atraso_medio": "{:.2f}", "mediana": "{:.1f}", "p90": "{:.1f}", "desvio": "{:.2f}", "pct_grave": "{:.0%}"}),
+                         hide_index=True, width="stretch")
+            dist = base_cmp.assign(classe=np.select([base_cmp.atraso < 0, base_cmp.atraso == 0], ["Antecipada", "Pontual"], "Atrasada")) \
+                .groupby(["grupo", "classe"]).size().rename("n").reset_index()
+            dist["pct"] = dist.n / dist.groupby("grupo").n.transform("sum")
+            st.altair_chart(alt.Chart(dist).mark_bar().encode(
+                y=alt.Y("grupo:N", title=None), x=alt.X("pct:Q", axis=alt.Axis(format="%"), title="% das entregas"),
+                color=alt.Color("classe:N", scale=ESC_CLASSE, legend=alt.Legend(title=None)),
+                tooltip=["grupo", "classe", alt.Tooltip("pct:Q", format=".1%")]).properties(height=60 + 40 * dist.grupo.nunique(),
+                                                                                       title="Antecipada × pontual × atrasada"), width="stretch")
+        st.markdown("**Por país e tier: com e sem os fornecedores de alto risco** (efeito de confundimento)")
+        dim = st.radio("Dimensão", ["pais", "tier"], horizontal=True, format_func=lambda x: {"pais": "País", "tier": "Tier"}[x])
+        a = ent.groupby(dim).atraso.mean().rename("Todos").reset_index()
+        b = ent[ent.risco != "Alto"].groupby(dim).atraso.mean().rename("Sem alto risco").reset_index()
+        ab = a.merge(b, on=dim, how="left").melt(dim, var_name="amostra", value_name="atraso_medio")
+        st.altair_chart(alt.Chart(ab).mark_bar().encode(
+            x=alt.X(f"{dim}:N", title=None, sort=None), y=alt.Y("atraso_medio:Q", title="Atraso médio (dias)"), xOffset="amostra:N",
+            color=alt.Color("amostra:N", scale=alt.Scale(domain=["Todos", "Sem alto risco"], range=[LARANJA, AZUL]), legend=alt.Legend(title=None)),
+            tooltip=[dim, "amostra", alt.Tooltip("atraso_medio:Q", format=".2f")]).properties(height=300), width="stretch")
+        st.caption("Quando a diferença entre países/tiers desaparece ao retirar os fornecedores de alto risco, o efeito era **deles**, "
+                   "não da categoria: agir por fornecedor, não por país ou tier.")
+
+    # ================================================================ 10. Insights e recomendações
+    with abas[9]:
+        alto = r[r.risco == "Alto"].sort_values("severidade", ascending=False)
+        st.markdown("### Leitura dos filtros atuais")
+        if len(alto):
+            st.success(f"**{', '.join(alto.fornecedor)}** = alto risco no período: atrasam em média **{br(alto.severidade.mean(), 1)} dias** quando atrasam, "
+                       f"somam **{pc(alto.share_dias_atraso.sum())}** dos dias de atraso e **{pc(alto.share_gasto.sum())}** do gasto.")
+        else:
+            st.info("Nenhum fornecedor classificado como alto risco no período/urgência selecionados.")
+        st.markdown("### Principais insights (notebook, base completa)")
+        if res["insights.csv"] is not None:
+            st.dataframe(res["insights.csv"], hide_index=True, width="stretch")
+        st.caption("**FATO** = medido diretamente. **ASSOCIAÇÃO** = relação estatística, não causal. **HIPÓTESE** = plausível, mas não mensurável nesta base.")
+        st.markdown("### Recomendações")
+        st.markdown(
+            "1. **Plano de ação individual com os fornecedores de alto risco** (metas de prazo, escalonamento, revisão contratual, auditoria de processo). **Alta**\n"
+            "2. **Gestão por fornecedor, não por categoria**: país, tier e fonte única não são bons critérios de atuação. **Alta**\n"
+            "3. **Medir o custo do atraso** (multas, frete urgente, parada de linha, ruptura por pedido) e **ligar compras a remessas**: hoje não é possível atribuir R$ ao atraso. **Alta**\n"
+            "4. **Revisar prazos prometidos** dos crônicos ou negociar prazo realista com penalidade (o atraso estica o contrato em 21% a 108%). Média\n"
+            "5. **Testar a proteção do ROP** nos produtos mais expostos a esses fornecedores (cobertura mediana ~27 dias vs caudas de 10–14 dias; hipótese). Média\n"
+            "6. **Monitoramento simples por fornecedor** (% atrasado, severidade, z robusto) com lista de observação, em vez de modelo pedido a pedido. Média\n"
+            "7. **Avaliar alternativas** para os de alto risco (nenhum é fonte única). Média/Baixa")
+        with st.expander("O que foi medido e o que não foi"):
+            st.markdown("- **Medido (fato):** sem prêmio de preço, volume parecido, mesma rejeição, mesma proporção de pedidos urgentes.\n"
+                        "- **Testado, sem evidência:** ruptura de estoque e nível de serviço ao cliente (o desenho dos dados dificilmente detectaria o efeito: "
+                        "todos os produtos são comprados dos mesmos 20 fornecedores e não há ligação compra↔remessa). *Ausência de evidência não é evidência de ausência.*\n"
+                        "- **Hipótese:** exposição de estoque em atrasos de 10–14 dias vs cobertura do ROP.\n"
+                        "- **Não mensurável:** custo financeiro, multas, impacto em planejamento e experiência do cliente.")
+        with st.expander("✅ Coerência com o notebook (base completa, sem filtros)"):
+            full = ped[ped.entregue]
+            linhas = [("Entregas analisadas", len(full), K["n_ent"] if K else None),
+                      ("% atrasadas", round(full.atrasado.mean(), 4), round(K["pct_atr"], 4) if K else None),
+                      ("Atraso médio (dias)", round(full.atraso.mean(), 3), round(K["atraso_medio"], 3) if K else None),
+                      ("Atrasos graves (≥ 4 d)", int(full.grave.sum()), K["n_grave"] if K else None)]
+            df = pd.DataFrame(linhas, columns=["indicador", "no app (base completa)", "no notebook"])
+            df["confere"] = np.where(df["no notebook"].isna(), "—", np.where(df.iloc[:, 1].astype(float).round(3) == df["no notebook"].astype(float).round(3), "✅", "❌"))
+            st.dataframe(df.astype(str), hide_index=True, width="stretch")
+            st.caption("O app e o notebook usam o mesmo módulo (`atrasos_lib.py`); esta tabela só confirma que os números são idênticos.")

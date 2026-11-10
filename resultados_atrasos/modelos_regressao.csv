@@ -1,0 +1,17 @@
+atributos,modelo,validação,MAE,RMSE,R²
+Só atributos do pedido,Linha de base (média do treino),Temporal (2024→2025),2.3388738089652943,3.1610856553555178,-0.0005772226567428707
+Só atributos do pedido,Linha de base (média do treino),Fornecedor novo (leave-one-supplier-out),2.446410712112725,3.368798624950752,-0.07182128349512529
+Só atributos do pedido,Regressão linear,Temporal (2024→2025),2.3403675951198903,3.16435389906055,-0.0026472840587112856
+Só atributos do pedido,Regressão linear,Fornecedor novo (leave-one-supplier-out),2.4479354065932144,3.3710178412380536,-0.07323388601244996
+Só atributos do pedido,Random Forest,Temporal (2024→2025),2.3735666675920672,3.1977773481644456,-0.023940044741646238
+Só atributos do pedido,Random Forest,Fornecedor novo (leave-one-supplier-out),2.468270962574844,3.3853856793870056,-0.08240198473349913
+Só atributos do pedido,Gradient Boosting,Temporal (2024→2025),2.4439805173525033,3.270488354993861,-0.07103410055748927
+Só atributos do pedido,Gradient Boosting,Fornecedor novo (leave-one-supplier-out),2.4998475400072286,3.4166803346994663,-0.10250602240394202
+Pedido + atributos do fornecedor,Linha de base (média do treino),Temporal (2024→2025),2.3388738089652943,3.1610856553555178,-0.0005772226567428707
+Pedido + atributos do fornecedor,Linha de base (média do treino),Fornecedor novo (leave-one-supplier-out),2.446410712112725,3.368798624950752,-0.07182128349512529
+Pedido + atributos do fornecedor,Regressão linear,Temporal (2024→2025),1.6933724397663035,2.0421330980336236,0.5824137666213108
+Pedido + atributos do fornecedor,Regressão linear,Fornecedor novo (leave-one-supplier-out),2.6718269903212373,3.3324284699634066,-0.04880306214889285
+Pedido + atributos do fornecedor,Random Forest,Temporal (2024→2025),1.6446117018499484,1.977113670488062,0.6085814874017097
+Pedido + atributos do fornecedor,Random Forest,Fornecedor novo (leave-one-supplier-out),3.2991835031387216,4.400672646534529,-0.8289860881336777
+Pedido + atributos do fornecedor,Gradient Boosting,Temporal (2024→2025),1.6473650872640377,1.993946597122804,0.6018881272607318
+Pedido + atributos do fornecedor,Gradient Boosting,Fornecedor novo (leave-one-supplier-out),3.3481509148258946,4.429109771803397,-0.8527002602401506

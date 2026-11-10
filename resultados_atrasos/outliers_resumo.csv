@@ -1,0 +1,5 @@
+variável,n,"limite inferior (1,5×IQR)","limite superior (1,5×IQR)","outliers 1,5×IQR","% 1,5×IQR",outliers 3×IQR,|z| > 3,P1,P99,máximo
+Atraso (dias),2807,-7.0,9.0,122,4.35,0,51,-2.0,12.0,14.0
+Tempo de entrega real (dias),2807,-6.5,37.5,203,7.23,0,0,5.0,45.94,49.0
+Valor do pedido (= custo das linhas),2807,-168137.78,412866.7,74,2.64,12,36,2213.06,501787.57,859316.43
+Itens (quantidade),2807,-1021.75,3724.25,34,1.21,0,21,98.0,3822.94,4885.0

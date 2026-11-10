@@ -1,0 +1,11 @@
+natureza,tema,achado,onde
+FATO,Dimensão,"58% das entregas atrasam, mas o atraso típico é curto (mediana 1 dia). 14,4% (403) passam de 3 dias, até 14.",Hist. + KPIs (Cap. 1)
+FATO,Concentração,"SUP-04, SUP-17, SUP-11 atrasam em 100% das entregas, ~7,6 dias; 59% dos dias de atraso e 100% dos atrasos graves, com 16% do gasto.","Ranking + matriz de risco (Cap. 2, 7)"
+FATO,Outros 17,"Perfil quase idêntico: 42%–57% atrasados, por 1,9–2,1 dias; nenhum atraso grave.",Ranking (Cap. 2)
+FATO,Persistência,"Sem tendência (p = 0,62) nem sazonalidade (p = 0,68) em 24 meses: o problema é estrutural.",Série temporal (Cap. 3)
+ASSOCIAÇÃO,Fatores,"País/tier parecem associados, mas o efeito desaparece sem os 3 crônicos. Atributos do pedido não explicam o atraso (R² = 0,004); o fornecedor explica 63%.","Cap. 3, 4, 8"
+FATO,Custo / volume / qualidade,"Sem prêmio de preço (índice 0,99–1,01), volume igual, rejeição igual (2,4% vs 2,4%), sem mais pedidos urgentes.",Cap. 5.1–5.2
+ASSOCIAÇÃO (nula),Estoque e serviço,"Sem associação detectável com ruptura (p = 0,29) nem com nível de serviço (p = 0,62); a base não permite atribuir causalidade.",Cap. 5.3
+HIPÓTESE,Exposição de estoque,"O ROP cobre 27 dias de demanda em mediana; atrasos de 10–14 dias podem superá-lo em 13% dos pares. Risco potencial, não medido.",Cap. 5.3
+FATO,Modelos,"O modelo de ML só acerta quando conhece o fornecedor (AUC 0,99 vs 0,49 só com pedido). Uma regra simples por fornecedor faz o mesmo (F1 0,95).",Cap. 8
+FATO,Outliers,Os extremos de atraso são eventos reais (100% dos 3 fornecedores); removê-los esconderia o problema e a lista de crônicos não muda.,Cap. 6
