@@ -130,49 +130,73 @@ def leitura_base(significa, fazer, selo=None):
         st.caption(selo)
 
 
-# ---------------- A história em 1 minuto ----------------
+# ---------------- A história dos dados, em linguagem simples ----------------
 def _historia():
     K = KP
     if K is None:
         return
+    cron = ", ".join(K["cronicos"])
+    atraso_cron = br(sum(K["cron_atraso"]) / 3, 0)
     with st.container(border=True):
-        st.markdown("### 📖 A história em 1 minuto")
+        st.markdown("### 📖 A história dos dados, em poucas palavras")
         st.markdown(
-            f"A Meridian **vende bem e tem boa margem** ({pc0(K['mb_pct'])} antes do frete), mas os dados mostram "
-            "**quatro pontos de atenção**. Cada um é explicado em uma aba abaixo, com o gráfico que prova. "
-            "*Os números desta caixa usam os dois anos completos e não mudam com os filtros.*")
-        c1, c2 = st.columns(2)
-        with c1:
+            "Vou te contar o que eu encontrei como se a gente estivesse conversando. "
+            "A Meridian funciona como um **atacado de peças industriais**: compra de fornecedores, guarda em estoque, "
+            "vende para empresas e manda entregar. No geral, o negócio **vai bem**: em dois anos faturou cerca de "
+            f"**{br(K['receita'] / 1e6, 0)} milhões** e, de cada 100 vendidos, **{br(K['mb_pct'] * 100, 0)} sobram antes do frete**. "
+            "Só que, olhando de perto, **quatro coisas chamam atenção**. Vamos a elas.")
+        st.caption("Os números desta caixa usam os dois anos completos e não mudam com os filtros.")
+
+        l1c1, l1c2 = st.columns(2)
+        with l1c1:
             st.markdown(
-                f"#### 1. 🚚 Poucos fornecedores concentram os atrasos\n"
-                f"**{pc0(K['pct_atraso_geral'])}** das entregas chegam depois do prometido, quase sempre por poucos dias. "
-                f"O problema sério está em **3 fornecedores** ({', '.join(K['cronicos'])}): atrasam em **todas** as entregas, "
-                f"cerca de **{br(sum(K['cron_atraso']) / 3, 0)} dias**. São 15% dos fornecedores, mas "
-                f"**{pc0(K['cron_share_dias'])} de todos os dias de atraso**. Ter nota alta de qualidade não protege "
-                f"(o fornecedor com a maior nota, {K['rating_top_nome']}, é um deles).\n\n"
-                f"👉 *Abas **1 · Fornecedores** e **5 · Atrasos de fornecedores**.*")
+                f"#### 1. 🚚 Quem atrasa de verdade são poucos fornecedores\n"
+                f"**{pc0(K['pct_atraso_geral'])}** das entregas chegam depois da data combinada. Assusta, mas a maioria é "
+                f"coisa de poucos dias (**{br(K['atraso_geral'], 1)} dia** de atraso em média, contando todas).\n\n"
+                f"O que preocupa são **3 fornecedores ({cron})**: eles atrasam **todas** as entregas, em torno de "
+                f"**{atraso_cron} dias**. São 3 em 20 (15%), mas respondem por **{pc0(K['cron_share_dias'])} de todos os dias de atraso**.\n\n"
+                f"E tem um detalhe curioso: o {K['rating_top_nome']} tem a **maior nota de qualidade** ({br(K['rating_top'], 2)}) "
+                f"e mesmo assim está entre os que mais atrasam. Ou seja, nota boa não garante entrega no prazo.\n\n"
+                f"👉 *Onde ver: abas **1 · Fornecedores** e **5 · Atrasos de fornecedores**.* · ✅ Fato")
+        with l1c2:
             st.markdown(
-                f"#### 3. 📉 O calendário é muito marcado\n"
-                f"As vendas **caem cerca de {pc0(abs(K['ago_vs']))} em agosto** e **sobem cerca de {pc0(K['q4_vs'])} de outubro a dezembro**, "
-                f"em relação aos outros meses. O padrão se repete em 2024 e 2025 e em todos os segmentos de clientes, "
-                f"então dá para planejar com antecedência.\n\n"
-                f"👉 *Aba **3 · Calendário**.*")
-        with c2:
+                f"#### 2. 💸 O frete engole o lucro de um produto\n"
+                f"O frete pesa {pc1(K['frete_pct'])} da receita e leva a margem de {pc1(K['mb_pct'])} para **{pc1(K['ml_pct'])}**. "
+                f"O caso mais extremo é o da categoria **Fasteners** (parafusos e "
+                f"peças pequenas): ela é só {pc1(K['fas_share_receita'])} das vendas, mas o frete dela custa "
+                f"**{pc0(K['fas_frete_pct'])} do que ela vende**. É como gastar 119 para entregar algo que você vendeu por 100: "
+                f"a margem fica **negativa ({pc0(K['fas_ml_pct'])})**.\n\n"
+                f"O **frete aéreo** concentra **{pc0(K['air_share_frete'])} de todo o gasto com frete**, e nos envios aéreos de Fasteners a margem chega a **{pc0(K['mat_ml']['Fasteners']['Air'])}**. "
+                f"E o avião não é mais rápido na prática: o trânsito real dura cerca de **{br(sum(K['transito_real'].values()) / 4, 0)} dias** "
+                f"em qualquer modal (aéreo, trem, estrada ou navio).\n\n"
+                f"👉 *Onde ver: aba **2 · Frete e margem**.* · ✅ Fato")
+
+        l2c1, l2c2 = st.columns(2)
+        with l2c1:
             st.markdown(
-                f"#### 2. 💸 O frete \"come\" a margem de um produto\n"
-                f"Depois do frete, a margem cai de {pc1(K['mb_pct'])} para **{pc1(K['ml_pct'])}**. "
-                f"A categoria **Fasteners** vale só {pc1(K['fas_share_receita'])} da receita, mas o frete dela equivale a "
-                f"**{pc0(K['fas_frete_pct'])} do que ela vende**: a margem líquida fica **negativa ({pc0(K['fas_ml_pct'])})**. "
-                f"O frete aéreo concentra **{pc0(K['air_share_frete'])} do gasto com frete**, e o tempo real de trânsito é "
-                f"parecido em todos os modais (~5 dias).\n\n"
-                f"👉 *Aba **2 · Frete e margem**.*")
+                f"#### 3. 📉 O ano tem um ritmo bem marcado\n"
+                f"Agosto é o mês fraco: as vendas ficam cerca de **{pc0(abs(K['ago_vs']))} abaixo** dos outros meses. "
+                f"De outubro a dezembro é a alta temporada: cerca de **{pc0(K['q4_vs'])} acima**.\n\n"
+                f"Não foi coincidência de um ano só. Aconteceu nos **dois anos** (agosto: {pc0(abs(K['ago_24']))} abaixo em 2024 e "
+                f"{pc0(abs(K['ago_25']))} em 2025) e em **todos os tipos de cliente**. Como o padrão se repete, "
+                f"dá para **se preparar com antecedência**.\n\n"
+                f"👉 *Onde ver: aba **3 · Calendário**.* · ✅ Fato")
+        with l2c2:
             st.markdown(
-                f"#### 4. 📦 Falta de estoque aumenta no fim do ano\n"
-                f"**{pc0(K['abaixo_geral'])}** das posições de estoque ficam abaixo do ponto de reposição e **{pc1(K['ruptura_geral'])}** chegam a zero. "
-                f"No 4º trimestre a ruptura sobe ({pc1(K['ruptura_q3'])} no 3º tri para {pc1(K['ruptura_q4'])} no 4º). "
-                f"O ponto de reposição é **fixo o ano todo**, enquanto a demanda muda. Isso é uma **hipótese** a testar: "
-                f"os dados mostram a coincidência, não provam a causa.\n\n"
-                f"👉 *Aba **4 · Estoque**.*")
+                f"#### 4. 📦 No fim do ano, falta mais produto no estoque\n"
+                f"Pense em cada produto, em cada armazém, em cada semana. Em **{pc0(K['abaixo_geral'])}** dessas situações o estoque "
+                f"estava abaixo do ponto em que já deveria ter pedido reposição, e em **{pc1(K['ruptura_geral'])}** ele **zerou**.\n\n"
+                f"No último trimestre piora: o estoque zerado sobe de **{pc1(K['ruptura_q3'])}** (3º tri) para "
+                f"**{pc1(K['ruptura_q4'])}** (4º tri), justamente na alta temporada do ponto 3. E o ponto de reposição é "
+                f"**o mesmo o ano inteiro**, mesmo com a demanda mudando.\n\n"
+                f"Minha hipótese é que essa regra fixa não acompanha a demanda. Mas **é só hipótese**: os dados mostram "
+                f"que as duas coisas aparecem juntas, não provam que uma causa a outra.\n\n"
+                f"👉 *Onde ver: aba **4 · Estoque**.* · 💡 Hipótese")
+
+        st.markdown(
+            "**Resumindo:** a Meridian vai bem, mas perde dinheiro e prazo em **poucos pontos bem localizados**: "
+            "3 fornecedores, 1 categoria de produto, 1 mês fraco, 1 trimestre de alta e um estoque que não acompanha a demanda. "
+            "Isso é bom sinal, porque dá para começar por poucos lugares.")
         st.caption("✅ **Fato** = medido direto nos dados · 🔗 **Associação** = aparecem juntos, sem provar causa · "
                    "💡 **Hipótese** = explicação possível que os dados não confirmam. Dados sintéticos (Kaggle).")
 
@@ -190,14 +214,30 @@ with aba1:
     f["cronico"] = f["atraso_medio"] >= 3
     if KP:
         leitura_topo(f"Três fornecedores concentram os atrasos; os outros {len(f) - 3} atrasam pouco")
-    st.subheader("Atraso médio por fornecedor (dias, só pedidos entregues)")
-    ch = alt.Chart(f).mark_bar().encode(
-        x=alt.X("supplier_name:N", sort=ordem, title=None),
-        y=alt.Y("atraso_medio:Q", title="Atraso médio (dias)"),
-        color=alt.condition("datum.cronico", alt.value(LARANJA), alt.value(CINZA)),
-        tooltip=["supplier_name", "tier", alt.Tooltip("atraso_medio:Q", format=".1f"),
-                 alt.Tooltip("pct_atrasado:Q", format=".0%"), "pedidos"]).properties(height=320)
-    st.altair_chart(ch, width="stretch")
+    # Gráfico de barras horizontais: trilho cinza-claro, barra por fornecedor, valor à direita
+    COR_ALERTA, COR_NEUTRA, COR_TRILHO, COR_TEXTO = "#C2410C", "#B7BBC4", "#EFEDE6", "#1B2230"
+    fb = f.sort_values("atraso_medio", ascending=False).reset_index(drop=True)
+    fb["rotulo"] = fb["atraso_medio"].map(lambda x: br(x, 1))
+    topo = float(np.ceil(fb["atraso_medio"].max()))
+    fb["trilho"] = topo
+    esc_x = alt.Scale(domain=[0, topo * 1.1], nice=False)
+    eixo_y = alt.Axis(title=None, domain=False, ticks=False, labelFontSize=13, labelColor=COR_TEXTO, labelPadding=10)
+    base = alt.Chart(fb).encode(y=alt.Y("supplier_name:N", sort=ordem, axis=eixo_y, scale=alt.Scale(paddingInner=0.25)))
+    trilho = base.mark_bar(size=20, cornerRadius=5, color=COR_TRILHO).encode(x=alt.X("trilho:Q", scale=esc_x, axis=None))
+    barra = base.mark_bar(size=20, cornerRadius=5).encode(
+        x=alt.X("atraso_medio:Q", scale=esc_x, axis=None),
+        color=alt.condition("datum.cronico", alt.value(COR_ALERTA), alt.value(COR_NEUTRA)),
+        tooltip=[alt.Tooltip("supplier_name:N", title="Fornecedor"), alt.Tooltip("tier:N", title="Tier"),
+                 alt.Tooltip("atraso_medio:Q", title="Atraso médio (dias)", format=".1f"),
+                 alt.Tooltip("pct_atrasado:Q", title="Entregas atrasadas", format=".0%"),
+                 alt.Tooltip("pedidos:Q", title="Pedidos entregues")])
+    valor = base.mark_text(align="left", dx=8, fontSize=13, fontWeight="bold", color=COR_TEXTO).encode(
+        x=alt.X("trilho:Q", scale=esc_x, axis=None), text="rotulo:N")
+    with st.container(border=True):
+        st.markdown("#### Atraso médio por fornecedor")
+        st.caption("dias de atraso por entrega (só pedidos entregues)")
+        st.altair_chart((trilho + barra + valor).properties(height=len(fb) * 29, padding={"left": 5, "right": 10, "top": 5, "bottom": 5})
+                        .configure_view(stroke=None), width="stretch")
     cr = f[f["cronico"]]
     cron_dias = ent[ent["supplier_id"].isin(cr["supplier_id"])]["atraso"].clip(lower=0).sum()
     tot_dias = ent["atraso"].clip(lower=0).sum()
@@ -290,7 +330,7 @@ with aba3:
     mensal = v.groupby(["ano", "mes"])["qty_shipped"].sum().reset_index()
     mensal["ano"] = mensal["ano"].astype(str)
     if KP:
-        leitura_topo("As vendas seguem um calendário: caem em agosto e disparam de outubro a dezembro, nos dois anos")
+        leitura_topo("Podemos observar um padrão nas vendas: caem em agosto e sobem bastante de outubro a dezembro, nos dois anos")
     st.subheader("Unidades enviadas por mês")
     ln = alt.Chart(mensal).mark_line(point=True).encode(
         x=alt.X("mes:O", title="Mês"), y=alt.Y("qty_shipped:Q", title="Unidades"),
