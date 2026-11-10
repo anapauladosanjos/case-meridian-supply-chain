@@ -303,10 +303,11 @@ def render():
             "chegam a 10–14 dias (hipótese). *Média*\n"
             "6. **Acompanhar cada fornecedor todo mês** (% de entregas atrasadas e dias de atraso), com uma lista de observação, em vez de um modelo de previsão. *Média*\n"
             "7. **Avaliar fornecedores alternativos** para os de alto risco (nenhum é fonte única). *Média a baixa*")
-        with st.expander("O que foi medido e o que não foi"):
-            st.markdown("- **Medido (fato):** preço, volume, rejeição e pedidos urgentes são parecidos entre os fornecedores.\n"
-                        "- **Testado, sem resultado:** falta de estoque e nível de serviço ao cliente. A base dificilmente mostraria esse efeito: "
-                        "todos os produtos vêm dos mesmos 20 fornecedores e não há ligação entre compra e remessa. "
-                        "*Não achar evidência não prova que o efeito não existe.*\n"
-                        "- **Hipótese:** com atrasos de 10 a 14 dias, o estoque de segurança pode não bastar.\n"
-                        "- **Não dá para medir:** custo em dinheiro, multas e impacto no planejamento e na experiência do cliente.")
+        with st.expander("O que os dados mostram", expanded=True):
+            st.markdown(
+                "- **Fatos observados:** não há diferença no preço, no volume de vendas, nas rejeições ou na proporção de pedidos urgentes.\n"
+                "- **Sem evidência conclusiva:** não foi possível identificar impacto na falta de estoque ou no nível de atendimento ao cliente. "
+                "Os dados disponíveis não permitem avaliar bem essa relação.\n"
+                "- **Hipótese:** atrasos de 10 a 14 dias podem aumentar o risco de falta de estoque, dependendo da quantidade disponível e do ponto de reposição.\n"
+                "- **Fora do alcance da análise:** não foi possível medir impactos financeiros, multas, planejamento ou experiência do cliente.")
+            st.markdown("**Importante:** não encontrar evidências de um impacto não significa que ele não exista.")
