@@ -366,7 +366,7 @@ def render():
             tooltip=["fornecedor", "risco", alt.Tooltip("dias_atraso_total:Q", format=",.0f"), alt.Tooltip("share_gasto:Q", format=".1%")]
         ).properties(height=260, title="Exposição: onde estão os dias de atraso"), width="stretch")
         st.caption("O risco mede atraso. Exposição financeira (tamanho da bolha) é lida à parte: a base não traz custo do atraso (multas, "
-                   "frete urgente, ruptura), então **nenhum valor em R$ é atribuído aos atrasos**.")
+                   "frete urgente, ruptura), então **nenhum valor em dinheiro é atribuído aos atrasos**.")
 
     # ================================================================ 8. Modelos
     with abas[7]:
@@ -462,15 +462,31 @@ def render():
                        f"somam **{pc(alto.share_dias_atraso.sum())}** dos dias de atraso e **{pc(alto.share_gasto.sum())}** do gasto.")
         else:
             st.info("Nenhum fornecedor classificado como alto risco no período/urgência selecionados.")
-        st.markdown("### Principais insights (notebook, base completa)")
+        st.markdown("### Principais descobertas")
+        st.caption("\"Insights\" são as descobertas da análise. Estas usam **todos os dados, sem filtros**, e são as mesmas do notebook. "
+                   "A caixa verde acima, ao contrário, muda quando você muda os filtros.")
+        # Números copiados de resultados/insights.csv (tabela técnica logo abaixo).
+        st.markdown(
+            "- ✅ **Atrasar é comum, mas quase sempre por pouco.** 58% das entregas atrasam, e o atraso típico é de 1 dia. Só 14% passam de 3 dias.\n"
+            "- ✅ **Três fornecedores concentram o problema.** SUP-04, SUP-17 e SUP-11 atrasam todas as entregas (cerca de 7,6 dias), "
+            "somam 59% dos dias de atraso e todos os atrasos graves, com só 16% do gasto. Os outros 17 são parecidos entre si: atrasam por cerca de 2 dias e nenhum tem atraso grave.\n"
+            "- ✅ **O problema é permanente.** Em 24 meses não há piora, melhora nem época do ano pior.\n"
+            "- 🔗 **O que explica o atraso é quem entrega.** País e tier parecem pesar, mas a diferença some sem os 3 fornecedores. "
+            "O fornecedor explica 63% do atraso e as características do pedido, menos de 1%.\n"
+            "- ✅ **Esses 3 não cobram mais caro nem rejeitam mais.** Preço, volume e rejeição (2,4%) são iguais aos dos outros, e eles não têm mais pedidos urgentes.\n"
+            "- 🔗 **Não achamos ligação com falta de estoque nem com o serviço ao cliente.** Isso não prova que não existe: a base não permite concluir.\n"
+            "- 💡 **Possível risco no estoque (hipótese).** O ponto de reposição cobre cerca de 27 dias de demanda, mas atrasos de 10 a 14 dias poderiam passar disso em 13% dos casos. Não foi medido.\n"
+            "- ✅ **Não precisa de modelo complicado.** Os modelos de previsão só acertam quando sabem quem é o fornecedor, e uma regra simples por fornecedor funciona igual. "
+            "Os atrasos extremos são reais, não erros: tirá-los esconderia o problema.")
         if res["insights.csv"] is not None:
-            st.dataframe(res["insights.csv"], hide_index=True, width="stretch")
-        st.caption("**FATO** = medido diretamente. **ASSOCIAÇÃO** = relação estatística, não causal. **HIPÓTESE** = plausível, mas não mensurável nesta base.")
+            with st.expander("Ver a tabela técnica completa (com testes estatísticos)"):
+                st.dataframe(res["insights.csv"], hide_index=True, width="stretch")
+        st.caption("✅ **Fato** = medido diretamente. 🔗 **Associação** = relação estatística, não prova causa. 💡 **Hipótese** = plausível, mas não medida nesta base.")
         st.markdown("### Recomendações")
         st.markdown(
             "1. **Plano de ação individual com os fornecedores de alto risco** (metas de prazo, escalonamento, revisão contratual, auditoria de processo). **Alta**\n"
             "2. **Gestão por fornecedor, não por categoria**: país, tier e fonte única não são bons critérios de atuação. **Alta**\n"
-            "3. **Medir o custo do atraso** (multas, frete urgente, parada de linha, ruptura por pedido) e **ligar compras a remessas**: hoje não é possível atribuir R$ ao atraso. **Alta**\n"
+            "3. **Medir o custo do atraso** (multas, frete urgente, parada de linha, ruptura por pedido) e **ligar compras a remessas**: hoje não é possível atribuir um valor em dinheiro ao atraso. **Alta**\n"
             "4. **Revisar prazos prometidos** dos crônicos ou negociar prazo realista com penalidade (o atraso estica o contrato em 21% a 108%). Média\n"
             "5. **Testar a proteção do ROP** nos produtos mais expostos a esses fornecedores (cobertura mediana ~27 dias vs caudas de 10–14 dias; hipótese). Média\n"
             "6. **Monitoramento simples por fornecedor** (% atrasado, severidade, z robusto) com lista de observação, em vez de modelo pedido a pedido. Média\n"
