@@ -197,7 +197,7 @@ def _historia():
 
 _historia()
 
-aba1, aba2, aba3, aba4, aba5 = st.tabs(["1 · Fornecedores", "2 · Frete e margem", "3 · Calendário", "4 · Estoque", "5 · Atrasos de fornecedores"])
+aba1, aba2, aba3, aba4, aba5, aba6 = st.tabs(["1 · Fornecedores", "2 · Frete e margem", "3 · Calendário", "4 · Estoque", "5 · Atrasos de fornecedores", "6 · O que fazer"])
 
 # ---------------- Fornecedores ----------------
 with aba1:
@@ -395,3 +395,84 @@ with aba4:
 # ---------------- Atrasos de fornecedores ----------------
 with aba5:
     pagina_atrasos.render()
+
+
+# ---------------- O que fazer ----------------
+with aba6:
+    if KP is None:
+        st.info("Os números desta aba vêm de resultados/resultados.json, que não foi encontrado.")
+    else:
+        K = KP
+        cen = {c["cenario"]: c for c in K["cenarios"]}
+        c_fb = cen["Só Fasteners e Bearings → Rail"]
+        c_air = cen["Todo o Air → Rail"]
+        be = {b["mode"]: b for b in K["breakeven"]}
+        reb2 = K["reb"][0]
+        k_col = [c for c in reb2 if c.startswith("% das semanas-produto")][0]
+        k_exc = [c for c in reb2 if c.startswith("% dessas")][0]
+        k_cob = [c for c in reb2 if c.startswith("% do déficit")][0]
+
+        with st.chat_message("Dado", avatar="🎲"):
+            st.markdown(
+                "**Oi, eu sou o Dado!** Depois de tudo que a gente viu, a boa notícia é esta: os problemas estão "
+                "**concentrados em poucos lugares**. Então dá para **começar por eles**, sem mexer na empresa inteira. "
+                "Aqui vão quatro ideias, cada uma ligada ao número que a sustenta.")
+        st.caption("Estas são **propostas para testar**, não resultados garantidos. As contas de economia são **simulações** "
+                   "com hipóteses explicadas no fim da aba.")
+
+        r1c1, r1c2 = st.columns(2)
+        with r1c1:
+            with st.container(border=True):
+                st.markdown("#### 🚚 1. Conversar com os 3 fornecedores que mais atrasam")
+                st.markdown(
+                    f"**O que vimos:** {', '.join(K['cronicos'])} atrasam todas as entregas e somam **{pc0(K['cron_share_dias'])} dos dias de atraso**, "
+                    f"com {pc0(K['cron_share_gasto'])} do gasto.\n\n"
+                    f"**Proposta:** abrir um plano de ação com eles e acompanhar o atraso todo mês. Nos dados, o atraso não se explica pelo tamanho do pedido, "
+                    f"pelo país nem pelo tipo de fornecedor: o que pesa é quem entrega.\n\n"
+                    f"**Como saber se funcionou:** o atraso médio desses três cair rumo ao dos demais (menos de 1 dia).")
+                st.caption("💡 Proposta · o custo em reais do atraso não está na base; vale começar a registrá-lo.")
+        with r1c2:
+            with st.container(border=True):
+                st.markdown("#### 💸 2. Trocar o modal de transporte da Fasteners")
+                st.markdown(
+                    f"**O que vimos:** o frete da Fasteners custa **{pc0(K['fas_frete_pct'])} do que ela vende**. "
+                    f"Por kg, o lucro bruto é {br(be['Rail']['lucro_bruto_kg_fasteners'], 2)} e o frete aéreo custa {br(be['Air']['frete_por_kg'], 2)}. "
+                    f"Só ferrovia ({br(be['Rail']['frete_por_kg'], 2)}/kg) e marítimo ({br(be['Sea']['frete_por_kg'], 2)}/kg) deixam sobra.\n\n"
+                    f"**Simulação:** levar Fasteners e Bearings do aéreo para a ferrovia economizaria **{br(c_fb['economia_frete'] / 1e6, 1)} milhões** "
+                    f"({pc0(c_fb['economia_pct_frete'])} do frete) e levaria a margem líquida de {pc1(K['ml_pct'])} para **{pc1(c_fb['ml_pct'])}**; "
+                    f"a da Fasteners iria de {pc0(K['fas_ml_pct'])} para {pc1(c_fb['ml_fasteners'])}. "
+                    f"Para todo o aéreo, a economia seria de {br(c_air['economia_frete'] / 1e6, 1)} milhões.\n\n"
+                    f"**Como saber se funcionou:** a margem líquida da Fasteners ficar positiva.")
+                st.caption("🧮 Simulação · supõe o mesmo custo por kg e o mesmo prazo real de hoje (~5 dias em qualquer modal).")
+
+        r2c1, r2c2 = st.columns(2)
+        with r2c1:
+            with st.container(border=True):
+                st.markdown("#### 📦 3. Transferir estoque entre armazéns e ajustar a reposição")
+                st.markdown(
+                    f"**O que vimos:** em **{pc0(reb2[k_col])}** das semanas-produto falta produto em pelo menos um armazém, "
+                    f"e em **{pc0(reb2[k_exc])}** desses casos sobra em outro. Transferências cobririam "
+                    f"**{pc0(reb2[k_cob])}** do que falta. Além disso, a reposição é fixa o ano todo e a ruptura sobe de "
+                    f"{pc1(K['ruptura_q3'])} para {pc1(K['ruptura_q4'])} no 4º trimestre.\n\n"
+                    f"**Proposta:** testar transferências entre armazéns e um ponto de reposição que mude com a época do ano, "
+                    f"começando por **Hydraulics** ({pc0(K['hyd_receita_share'])} da receita, {pc0(K['abaixo_cat']['Hydraulics'])} das posições abaixo do ponto).\n\n"
+                    f"**Como saber se funcionou:** a ruptura do 4º trimestre cair em relação ao 3º.")
+                st.caption("💡 Hipótese · a reposição fixa é uma explicação possível; os dados mostram que coincidem, não que uma causa a outra. "
+                           "\"Sobra\" = estoque acima de 2× o ponto de reposição.")
+        with r2c2:
+            with st.container(border=True):
+                st.markdown("#### 📉 4. Planejar o ano em cima do calendário")
+                st.markdown(
+                    f"**O que vimos:** as vendas ficam cerca de **{pc0(abs(K['ago_vs']))} abaixo** em agosto e cerca de **{pc0(K['q4_vs'])} acima** "
+                    f"de outubro a dezembro, nos dois anos e em todos os segmentos.\n\n"
+                    f"**Proposta:** montar o plano de compras, estoque e transporte já considerando esses meses, em vez de reagir quando chegam.\n\n"
+                    f"**Como saber se funcionou:** menos falta de produto na alta temporada e menos estoque parado no mês fraco.")
+                st.caption("✅ O padrão é fato medido; a proposta é uma sugestão de planejamento.")
+
+        with st.container(border=True):
+            st.markdown("#### O que estas contas não sabem")
+            st.markdown(
+                "- As economias de frete são **simulações**: supõem o mesmo custo por kg e o mesmo prazo de hoje. Contratos, capacidade das transportadoras "
+                "e a aceitação dos clientes não estão na base.\n"
+                "- O **custo em reais do atraso** não pode ser medido com estes dados, por isso nenhum valor foi estimado para a ação 1.\n"
+                "- Os dados são **sintéticos** (Kaggle) e cobrem 2024 e 2025. Tudo aqui é associação, não causa: por isso cada ideia traz uma forma de testar.")
