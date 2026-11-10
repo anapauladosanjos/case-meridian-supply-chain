@@ -130,73 +130,67 @@ def leitura_base(significa, fazer, selo=None):
         st.caption(selo)
 
 
-# ---------------- A história dos dados, em linguagem simples ----------------
+# ---------------- O que os dados revelam sobre a Meridian ----------------
 def _historia():
     K = KP
     if K is None:
         return
     cron = ", ".join(K["cronicos"])
     atraso_cron = br(sum(K["cron_atraso"]) / 3, 0)
+    transito = br(sum(K["transito_real"].values()) / 4, 0)
     with st.container(border=True):
-        st.markdown("### 📖 A história dos dados, em poucas palavras")
+        st.markdown("### O que os dados revelam sobre a Meridian?")
         st.markdown(
-            "Vou te contar o que eu encontrei como se a gente estivesse conversando. "
-            "A Meridian funciona como um **atacado de peças industriais**: compra de fornecedores, guarda em estoque, "
-            "vende para empresas e manda entregar. No geral, o negócio **vai bem**: em dois anos faturou cerca de "
-            f"**{br(K['receita'] / 1e6, 0)} milhões** e, de cada 100 vendidos, **{br(K['mb_pct'] * 100, 0)} sobram antes do frete**. "
-            "Só que, olhando de perto, **quatro coisas chamam atenção**. Vamos a elas.")
+            f"A Meridian apresenta bons resultados de vendas e uma **margem de lucro de {pc0(K['mb_pct'])} antes de descontar o frete**. "
+            "Ao analisar os dados mais de perto, alguns pontos chamam a atenção e ajudam a entender melhor o funcionamento da operação.")
         st.caption("Os números desta caixa usam os dois anos completos e não mudam com os filtros.")
 
         l1c1, l1c2 = st.columns(2)
         with l1c1:
             st.markdown(
-                f"#### 1. 🚚 Quem atrasa de verdade são poucos fornecedores\n"
-                f"**{pc0(K['pct_atraso_geral'])}** das entregas chegam depois da data combinada. Assusta, mas a maioria é "
-                f"coisa de poucos dias (**{br(K['atraso_geral'], 1)} dia** de atraso em média, contando todas).\n\n"
-                f"O que preocupa são **3 fornecedores ({cron})**: eles atrasam **todas** as entregas, em torno de "
-                f"**{atraso_cron} dias**. São 3 em 20 (15%), mas respondem por **{pc0(K['cron_share_dias'])} de todos os dias de atraso**.\n\n"
-                f"E tem um detalhe curioso: o {K['rating_top_nome']} tem a **maior nota de qualidade** ({br(K['rating_top'], 2)}) "
-                f"e mesmo assim está entre os que mais atrasam. Ou seja, nota boa não garante entrega no prazo.\n\n"
-                f"👉 *Onde ver: abas **1 · Fornecedores** e **5 · Atrasos de fornecedores**.* · ✅ Fato")
+                f"#### 1. 🚚 Os atrasos estão concentrados em três fornecedores\n"
+                f"**{pc0(K['pct_atraso_geral'])}** das entregas chegam depois do prazo previsto. Desse total, três fornecedores "
+                f"(**{cron}**) se destacam por costumarem atrasar **todas** as entregas, em média **{atraso_cron} dias**. "
+                f"Juntos, representam **{pc0(K['cron_share_dias'])} de todos os dias de atraso**.\n\n"
+                f"Um detalhe interessante é que o {K['rating_top_nome']}, apesar de ter a **melhor avaliação de qualidade**, "
+                f"também apresenta atrasos frequentes.\n\n"
+                f"👉 *Abas **1 · Fornecedores** e **5 · Atrasos de fornecedores**.* · ✅ Fato")
         with l1c2:
             st.markdown(
-                f"#### 2. 💸 O frete engole o lucro de um produto\n"
-                f"O frete pesa {pc1(K['frete_pct'])} da receita e leva a margem de {pc1(K['mb_pct'])} para **{pc1(K['ml_pct'])}**. "
-                f"O caso mais extremo é o da categoria **Fasteners** (parafusos e "
-                f"peças pequenas): ela é só {pc1(K['fas_share_receita'])} das vendas, mas o frete dela custa "
-                f"**{pc0(K['fas_frete_pct'])} do que ela vende**. É como gastar 119 para entregar algo que você vendeu por 100: "
-                f"a margem fica **negativa ({pc0(K['fas_ml_pct'])})**.\n\n"
-                f"O **frete aéreo** concentra **{pc0(K['air_share_frete'])} de todo o gasto com frete**, e nos envios aéreos de Fasteners a margem chega a **{pc0(K['mat_ml']['Fasteners']['Air'])}**. "
-                f"E o avião não é mais rápido na prática: o trânsito real dura cerca de **{br(sum(K['transito_real'].values()) / 4, 0)} dias** "
-                f"em qualquer modal (aéreo, trem, estrada ou navio).\n\n"
-                f"👉 *Onde ver: aba **2 · Frete e margem**.* · ✅ Fato")
+                f"#### 2. 💸 O frete tem um peso diferente em cada categoria\n"
+                f"Quando descontamos os custos de transporte, a margem da Meridian passa de **{pc1(K['mb_pct'])}** para **{pc1(K['ml_pct'])}**.\n\n"
+                f"Um caso que chama a atenção é a categoria **Fasteners**: ela representa apenas **{pc1(K['fas_share_receita'])} da receita**, "
+                f"mas o custo do frete equivale a **{pc0(K['fas_frete_pct'])} do que vende**, resultando em uma margem negativa de **{pc0(abs(K['fas_ml_pct']))}**.\n\n"
+                f"Outro dado interessante é que o frete aéreo concentra **{pc0(K['air_share_frete'])} dos gastos com transporte**, "
+                f"embora o tempo médio de entrega seja parecido entre os modais, cerca de **{transito} dias**.\n\n"
+                f"👉 *Aba **2 · Frete e margem**.* · ✅ Fato")
 
         l2c1, l2c2 = st.columns(2)
         with l2c1:
             st.markdown(
-                f"#### 3. 📉 O ano tem um ritmo bem marcado\n"
-                f"Agosto é o mês fraco: as vendas ficam cerca de **{pc0(abs(K['ago_vs']))} abaixo** dos outros meses. "
-                f"De outubro a dezembro é a alta temporada: cerca de **{pc0(K['q4_vs'])} acima**.\n\n"
-                f"Não foi coincidência de um ano só. Aconteceu nos **dois anos** (agosto: {pc0(abs(K['ago_24']))} abaixo em 2024 e "
-                f"{pc0(abs(K['ago_25']))} em 2025) e em **todos os tipos de cliente**. Como o padrão se repete, "
-                f"dá para **se preparar com antecedência**.\n\n"
-                f"👉 *Onde ver: aba **3 · Calendário**.* · ✅ Fato")
+                f"#### 3. 📉 As vendas seguem um padrão ao longo do ano\n"
+                f"Ao observar as vendas mês a mês, percebemos que agosto costuma apresentar uma queda de aproximadamente "
+                f"**{pc0(abs(K['ago_vs']))}** em relação aos demais meses, enquanto entre outubro e dezembro as vendas aumentam cerca de "
+                f"**{pc0(K['q4_vs'])}**.\n\n"
+                f"Esse comportamento se repete em 2024 e 2025 e aparece em todos os segmentos de clientes, mostrando um padrão de "
+                f"sazonalidade ao longo do ano.\n\n"
+                f"👉 *Aba **3 · Calendário**.* · ✅ Fato")
         with l2c2:
             st.markdown(
-                f"#### 4. 📦 No fim do ano, falta mais produto no estoque\n"
-                f"Pense em cada produto, em cada armazém, em cada semana. Em **{pc0(K['abaixo_geral'])}** dessas situações o estoque "
-                f"estava abaixo do ponto em que já deveria ter pedido reposição, e em **{pc1(K['ruptura_geral'])}** ele **zerou**.\n\n"
-                f"No último trimestre piora: o estoque zerado sobe de **{pc1(K['ruptura_q3'])}** (3º tri) para "
-                f"**{pc1(K['ruptura_q4'])}** (4º tri), justamente na alta temporada do ponto 3. E o ponto de reposição é "
-                f"**o mesmo o ano inteiro**, mesmo com a demanda mudando.\n\n"
-                f"Minha hipótese é que essa regra fixa não acompanha a demanda. Mas **é só hipótese**: os dados mostram "
-                f"que as duas coisas aparecem juntas, não provam que uma causa a outra.\n\n"
-                f"👉 *Onde ver: aba **4 · Estoque**.* · 💡 Hipótese")
+                f"#### 4. 📦 O estoque zerado aumenta no final do ano\n"
+                f"Na análise do estoque, **{pc0(K['abaixo_geral'])}** dos registros estão abaixo do ponto de reposição e "
+                f"**{pc1(K['ruptura_geral'])}** apresentam estoque zerado.\n\n"
+                f"Esse percentual aumenta no quarto trimestre: passa de **{pc1(K['ruptura_q3'])}** no terceiro trimestre para "
+                f"**{pc1(K['ruptura_q4'])}** no quarto.\n\n"
+                f"Outro ponto observado é que o ponto de reposição permanece **fixo durante todo o ano**, mesmo com as variações "
+                f"nas vendas. Essa relação pode ajudar a entender melhor o comportamento do estoque nos períodos de maior demanda.\n\n"
+                f"👉 *Aba **4 · Estoque**.* · 💡 Hipótese: os dados mostram que aparecem juntos, não provam a causa")
 
         st.markdown(
-            "**Resumindo:** a Meridian vai bem, mas perde dinheiro e prazo em **poucos pontos bem localizados**: "
-            "3 fornecedores, 1 categoria de produto, 1 mês fraco, 1 trimestre de alta e um estoque que não acompanha a demanda. "
-            "Isso é bom sinal, porque dá para começar por poucos lugares.")
+            "#### Visão geral\n"
+            "Esses quatro pontos mostram diferentes aspectos da operação da Meridian: os prazos dos fornecedores, o impacto do frete "
+            "nos resultados, as variações nas vendas ao longo do ano e o comportamento do estoque. Juntos, ajudam a construir uma "
+            "visão mais completa do negócio e de como esses fatores se relacionam com seus resultados.")
         st.caption("✅ **Fato** = medido direto nos dados · 🔗 **Associação** = aparecem juntos, sem provar causa · "
                    "💡 **Hipótese** = explicação possível que os dados não confirmam. Dados sintéticos (Kaggle).")
 
