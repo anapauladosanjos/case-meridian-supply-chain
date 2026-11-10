@@ -91,8 +91,8 @@ v = vendas[vendas["ano"].isin(anos) & vendas["category"].isin(cats) & vendas["mo
 iv = inv[inv["ano"].isin(anos) & inv["category"].isin(cats)]
 
 st.title("📦 Meridian Components — Análise de Supply Chain")
-st.caption("Dados sintéticos (Kaggle), 2024–2025. Margem bruta = receita − qtd × custo padrão; "
-           "margem líquida = margem bruta − frete. Resultados são associações, não causas.")
+st.caption("Dados sintéticos (criados para estudo, do Kaggle), de 2024 e 2025. **Margem bruta** = o que sobra da venda depois do custo do produto. "
+           "**Margem líquida** = o que sobra depois de descontar também o frete. Os resultados mostram relações entre as coisas, não causas.")
 
 if v.empty:
     st.warning("Nenhum dado para os filtros escolhidos.")
@@ -235,8 +235,8 @@ with aba1:
     cr = f[f["cronico"]]
     cron_dias = ent[ent["supplier_id"].isin(cr["supplier_id"])]["atraso"].clip(lower=0).sum()
     tot_dias = ent["atraso"].clip(lower=0).sum()
-    st.info(f"Fornecedores com atraso médio ≥ 3 dias: **{', '.join(cr['supplier_name'])}** — "
-            f"{br(cron_dias / tot_dias * 100, 0)}% dos dias de atraso acumulados.")
+    st.info(f"Os fornecedores que atrasam 3 dias ou mais, em média, são **{', '.join(cr['supplier_name'])}**. "
+            f"Juntos, respondem por {br(cron_dias / tot_dias * 100, 0)}% de todos os dias de atraso.")
 
     if KP:
         leitura_base(
@@ -244,20 +244,20 @@ with aba1:
             f"**{br(sum(KP['cron_atraso']) / 3, 0)} dias**, e somam **{pc0(KP['cron_share_dias'])}** dos dias de atraso com "
             f"{pc0(KP['cron_share_gasto'])} do gasto. Os demais atrasam em média menos de 1 dia. Nota de qualidade alta não protege: "
             f"{KP['rating_top_nome']} tem a maior nota da base e é um dos três.",
-            "Abrir um plano de ação com esses três fornecedores e acompanhar o atraso deles todo mês. "
-            "Começar a registrar o custo de cada atraso (multa, frete urgente, falta de produto), hoje impossível de medir.",
-            "✅ Fato: medido direto nos dados. O custo em reais do atraso não foi estimado porque a base não o traz.")
+            "Combinar um plano com esses três fornecedores e acompanhar o atraso deles todo mês. "
+            "Passar a registrar o custo de cada atraso (multa, frete urgente, falta de produto), que hoje não dá para medir.",
+            "✅ Fato: medido direto nos dados. O custo do atraso em dinheiro não foi estimado, porque a base não traz esse dado.")
     st.subheader("Nota de qualidade × taxa de rejeição")
     rho = f["quality_rating"].rank().corr(f["rejeicao"].rank())
     sc = alt.Chart(f).mark_circle(size=140).encode(
-        x=alt.X("quality_rating:Q", scale=alt.Scale(zero=False), title="quality_rating"),
-        y=alt.Y("rejeicao:Q", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 0.04]), title="Rejeição"),
+        x=alt.X("quality_rating:Q", scale=alt.Scale(zero=False), title="Nota de qualidade"),
+        y=alt.Y("rejeicao:Q", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 0.04]), title="Taxa de rejeição"),
         color=alt.Color("tier:N", scale=alt.Scale(range=[AZUL, LARANJA, "#1baf7a"])),
         tooltip=["supplier_name", "tier", "quality_rating", alt.Tooltip("rejeicao:Q", format=".2%")]
     ).properties(height=320)
     st.altair_chart(sc, width="stretch")
-    st.caption(f"A rejeição é parecida em todos os fornecedores (cerca de {pc1(KP['rej_geral']) if KP else '2,4%'}) e a nota de "
-               f"qualidade não a explica (correlação de Spearman ρ = {br(rho, 2)}, n = {len(f)}). Correlação não prova causa.")
+    st.caption(f"A rejeição é parecida em todos os fornecedores (cerca de {pc1(KP['rej_geral']) if KP else '2,4%'}), e a nota de "
+               f"qualidade não a explica. (Correlação de Spearman: ρ = {br(rho, 2)}, com {len(f)} fornecedores.) Correlação não prova causa.")
     st.dataframe(f.drop(columns=["cronico"]).sort_values("atraso_medio", ascending=False)
                  .style.format({"atraso_medio": "{:.1f}", "pct_atrasado": "{:.0%}", "rejeicao": "{:.2%}"}),
                  width="stretch", hide_index=True)
@@ -270,7 +270,7 @@ with aba2:
     g["ml"] = (g.receita - g.custo - g.frete) / g.receita
     g["frete_pct"] = g.frete / g.receita
     if KP:
-        leitura_topo(f"O frete tira {br((KP['mb_pct'] - KP['ml_pct']) * 100, 1)} pontos de margem, e a perda está quase toda em Fasteners")
+        leitura_topo(f"O frete reduz a margem em {br((KP['mb_pct'] - KP['ml_pct']) * 100, 1)} pontos, e a Fasteners é o caso mais grave: vende pouco e fica com margem negativa")
     st.subheader("Margem depois do frete, por categoria")
     bars = alt.Chart(g).mark_bar().encode(
         y=alt.Y("category:N", sort="-x", title=None),
@@ -301,7 +301,8 @@ with aba2:
             "Rever o transporte de Fasteners e Bearings. A simulação abaixo mostra o efeito de trocar o aéreo por outro modal.",
             "✅ Fato (margens) e 💡 simulação (troca de transporte): a simulação é uma conta com os dados, não um resultado observado.")
     st.subheader("Simulação: trocar o transporte de Fasteners e Bearings")
-    destino = st.selectbox("Trocar o transporte aéreo por", ["Road", "Rail", "Sea"], index=1)
+    destino = st.selectbox("Trocar o transporte aéreo por", ["Road", "Rail", "Sea"], index=1,
+                           format_func=lambda x: {"Road": "Rodoviário (Road)", "Rail": "Ferroviário (Rail)", "Sea": "Marítimo (Sea)"}[x])
     alvo = ["Fasteners", "Bearings"]
     base_v = vendas[vendas["ano"].isin(anos)]
     cpk = (base_v.groupby("mode")["freight_cost"].sum() /
@@ -316,8 +317,8 @@ with aba2:
     a.metric("Economia de frete simulada (mi)", br(economia / 1e6))
     b.metric("Margem líquida atual", br(ml_atual * 100) + "%")
     c.metric("Margem líquida simulada", br(ml_novo * 100) + "%")
-    st.caption("Simulação simplificada: só Air → modal escolhido; frete = kg × custo médio/kg do modal. "
-               "O efeito no prazo não é modelado — trate como hipótese a validar em piloto.")
+    st.caption("Conta simplificada: só os envios aéreos de Fasteners e Bearings passam para o transporte escolhido, e o frete é o peso vezes o custo médio por kg desse transporte. "
+               "O efeito no prazo não entra na conta: trate o resultado como hipótese e teste em um piloto.")
 
 # ---------------- Sazonalidade ----------------
 with aba3:
@@ -334,12 +335,12 @@ with aba3:
     mm = v.groupby(["ano", "mes"])["qty_shipped"].sum().groupby("mes").mean()
     ago = mm.loc[8] / mm.drop([8]).mean() - 1
     q4 = mm.loc[[10, 11, 12]].mean() / mm.drop([10, 11, 12]).mean() - 1
-    st.caption(f"Com os filtros atuais: agosto {br(ago * 100, 0)}% e Q4 {br(q4 * 100, 0)}% vs. a média dos demais meses.")
+    st.caption(f"Com os filtros atuais, em relação à média dos outros meses: agosto {br(ago * 100, 0)}% e outubro a dezembro {br(q4 * 100, 0)}%.")
     if KP:
         leitura_base(
             f"Em agosto vende-se cerca de **{pc0(abs(KP['ago_vs']))} menos** e de outubro a dezembro cerca de **{pc0(KP['q4_vs'])} mais**, "
-            "comparado aos outros meses. O padrão se repete em 2024 e 2025 e em todos os segmentos de clientes, então é previsível.",
-            "Planejar compras e produção pelo calendário: reforçar o estoque antes de outubro e aproveitar agosto para manutenção.",
+            "comparado aos outros meses. O padrão se repete em 2024 e 2025 e em todos os segmentos de clientes, então dá para prever.",
+            "Planejar compras e estoque pelo calendário: reforçar o estoque antes de outubro e ajustar as compras para agosto.",
             "✅ Fato. Os números desta caixa usam os dois anos completos; a linha logo acima do gráfico muda com os filtros.")
     seg = v.groupby(["industry_segment", "mes"])["qty_shipped"].sum().reset_index()
     seg["indice"] = seg["qty_shipped"] / seg.groupby("industry_segment")["qty_shipped"].transform("mean")
@@ -356,12 +357,12 @@ with aba4:
     else:
         if KP:
             leitura_topo("No fim do ano faltam mais produtos no estoque, e a categoria mais vendida sofre mais")
-        st.caption("**Ruptura** = produto zerado no armazém. **Ponto de reposição (ROP)** = nível de estoque em que se pede mais produto; "
-                   "'abaixo do ROP' = estoque menor que esse nível. As fotos semanais são tratadas como taxas, nunca somadas.")
+        st.caption("**Ruptura** = produto zerado no armazém. **Ponto de reposição** = nível de estoque em que é hora de pedir mais; "
+                   "\"abaixo do ponto\" = estoque menor que esse nível. Cada semana é uma \"foto\" do estoque: olhamos a proporção das fotos, sem somá-las.")
         em = iv.groupby(["ano", "mes"]).agg(ruptura=("ruptura", "mean"), abaixo=("abaixo_rop", "mean")).reset_index()
         em["ano"] = em["ano"].astype(str)
         met = st.radio("Indicador", ["ruptura", "abaixo"], horizontal=True,
-                       format_func=lambda x: {"ruptura": "% em ruptura", "abaixo": "% abaixo do ROP"}[x])
+                       format_func=lambda x: {"ruptura": "% em ruptura", "abaixo": "% abaixo do ponto de reposição"}[x])
         st.altair_chart(alt.Chart(em).mark_line(point=True).encode(
             x=alt.X("mes:O", title="Mês"), y=alt.Y(f"{met}:Q", axis=alt.Axis(format="%"), title=None),
             color=alt.Color("ano:N", scale=alt.Scale(range=[CINZA, LARANJA])),
@@ -369,7 +370,7 @@ with aba4:
             width="stretch")
         q3 = em[em["mes"].isin([7, 8, 9])]["ruptura"].mean()
         q4i = em[em["mes"].isin([10, 11, 12])]["ruptura"].mean()
-        st.caption(f"Ruptura média: Q3 {br(q3 * 100)}% → Q4 {br(q4i * 100)}% (com os filtros atuais).")
+        st.caption(f"Ruptura média: {br(q3 * 100)}% no 3º trimestre e {br(q4i * 100)}% no 4º (com os filtros atuais).")
         cat = iv.groupby("category").agg(abaixo=("abaixo_rop", "mean"), ruptura=("ruptura", "mean")).reset_index()
         st.subheader("% das posições de estoque abaixo do ponto de reposição, por categoria")
         st.altair_chart(alt.Chart(cat).mark_bar().encode(
@@ -380,8 +381,8 @@ with aba4:
         sku = (iv.groupby("product_code").agg(abaixo=("abaixo_rop", "mean"), ruptura=("ruptura", "mean"))
                .sort_values("abaixo", ascending=False).head(10).reset_index())
         st.subheader("10 produtos que mais ficam abaixo do ponto de reposição")
-        st.dataframe(sku.rename(columns={"product_code": "produto", "abaixo": "% abaixo do ROP", "ruptura": "% zerado"})
-                     .style.format({"% abaixo do ROP": "{:.0%}", "% zerado": "{:.0%}"}), hide_index=True,
+        st.dataframe(sku.rename(columns={"product_code": "produto", "abaixo": "% abaixo do ponto", "ruptura": "% zerado"})
+                     .style.format({"% abaixo do ponto": "{:.0%}", "% zerado": "{:.0%}"}), hide_index=True,
                      width="stretch")
         if KP:
             leitura_base(
@@ -430,7 +431,7 @@ with aba6:
                     f"**Proposta:** abrir um plano de ação com eles e acompanhar o atraso todo mês. Nos dados, o atraso não se explica pelo tamanho do pedido, "
                     f"pelo país nem pelo tipo de fornecedor: o que pesa é quem entrega.\n\n"
                     f"**Como saber se funcionou:** o atraso médio desses três cair rumo ao dos demais (menos de 1 dia).")
-                st.caption("💡 Proposta · o custo em reais do atraso não está na base; vale começar a registrá-lo.")
+                st.caption("💡 Proposta · o custo do atraso em dinheiro não está na base; vale começar a registrá-lo.")
         with r1c2:
             with st.container(border=True):
                 st.markdown("#### 💸 2. Trocar o modal de transporte da Fasteners")
@@ -474,5 +475,5 @@ with aba6:
             st.markdown(
                 "- As economias de frete são **simulações**: supõem o mesmo custo por kg e o mesmo prazo de hoje. Contratos, capacidade das transportadoras "
                 "e a aceitação dos clientes não estão na base.\n"
-                "- O **custo em reais do atraso** não pode ser medido com estes dados, por isso nenhum valor foi estimado para a ação 1.\n"
+                "- O **custo do atraso em dinheiro** não pode ser medido com estes dados, por isso nenhum valor foi estimado para a ação 1.\n"
                 "- Os dados são **sintéticos** (Kaggle) e cobrem 2024 e 2025. Tudo aqui é associação, não causa: por isso cada ideia traz uma forma de testar.")

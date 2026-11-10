@@ -100,11 +100,11 @@ def render():
         f"- **O atraso grave (4 dias ou mais) está concentrado em 3 fornecedores**: {', '.join(K['cron_nomes'])}. "
         f"Eles atrasam em todas as entregas e respondem por {pc(K['cron_share_dias'], 0)} de todos os dias de atraso.\n"
         "- **Não é o tamanho do pedido, o país nem o tipo de fornecedor**: o que explica o atraso é *quem entrega*.\n"
-        "- **O custo em reais do atraso não pode ser medido** com estes dados, por isso nenhum valor foi estimado.")
-    st.caption("**Como o atraso é medido:** data de entrega real − data prometida (em dias; só pedidos entregues). "
-               "Se prometeu na segunda e entregou na quinta, são 3 dias. Negativo = chegou antes; zero = no dia; "
-               "positivo = atrasou. **Atraso grave = 4 dias ou mais.** *Frequência* é quantas entregas atrasam; "
-               "*gravidade* é quanto atrasam quando atrasam. Os resultados mostram **associações**, não causas.")
+        "- **Quanto o atraso custa em dinheiro não dá para medir** com estes dados, então nenhum valor foi estimado.")
+    st.caption("**Como medimos o atraso:** dia em que a entrega chegou menos o dia prometido (só pedidos entregues). "
+               "Prometeu na segunda e chegou na quinta? São 3 dias. Número negativo = chegou antes; zero = chegou no dia. "
+               "**Atraso grave = 4 dias ou mais.** *Frequência* = em quantas entregas atrasa. *Gravidade* = quantos dias atrasa quando atrasa. "
+               "Os resultados mostram relações entre as coisas, não causas.")
 
     # ---------------- filtros (valem para todos os painéis desta aba) ----------------
     meses = sorted(ped["ano_mes"].unique())
@@ -113,12 +113,11 @@ def render():
         c1, c2, c3, c4 = st.columns([1.4, 1.2, 1, 1])
         periodo = c1.select_slider("Período (mês do pedido)", options=meses, value=(meses[0], meses[-1]))
         sel_forn = c2.multiselect("Fornecedor (vazio = todos)", forn_all)
-        tiers = c3.multiselect("Tier", sorted(ped["tier"].unique()))
+        tiers = c3.multiselect("Tier", sorted(ped["tier"].unique()), help="Nível do fornecedor (A, B ou C).")
         paises = c4.multiselect("País", sorted(ped["pais"].unique()))
-        urg = st.radio("Urgência do pedido", ["Todos", "Só urgentes (expedited)", "Só normais"], horizontal=True)
-        st.caption("O **período** e a **urgência** definem a base usada no cálculo (inclusive risco e segmentos, "
-                   "recalculados sobre os 20 fornecedores). **Fornecedor, tier e país** escolhem o que é exibido, "
-                   "sem alterar a classificação dos demais.")
+        urg = st.radio("Urgência do pedido", ["Todos", "Só urgentes", "Só normais"], horizontal=True)
+        st.caption("**Período** e **urgência** mudam a base do cálculo (inclusive o risco de cada fornecedor). "
+                   "**Fornecedor, tier e país** só escolhem o que aparece na tela.")
 
     d = ped[(ped.ano_mes >= periodo[0]) & (ped.ano_mes <= periodo[1])]
     if urg.startswith("Só urgentes"):
@@ -175,8 +174,8 @@ def render():
         st.info(f"Entre os fornecedores exibidos, **{n_alto}** estão classificados como **alto risco** no período. "
                 f"Atraso grave: **{int(ev.grave.sum())}** entregas ({pc(ev.grave.mean(), 1)}).")
         with st.expander("🧪 Dá para confiar nos dados? (3.000 pedidos)"):
-            st.markdown("Nada foi excluído: a cópia tratada só converte tipos (datas em texto → datetime). "
-                        "Cancelados ficam à parte (sem data de entrega, não entram nas métricas de atraso).")
+            st.markdown("Nenhum dado foi descartado: só converti as datas de texto para data de verdade. "
+                        "Os pedidos cancelados ficam de fora do cálculo de atraso, porque não têm data de entrega.")
             st.dataframe(aud.drop(columns=["#"]), hide_index=True, width="stretch")
             st.markdown("**Antes × depois do tratamento**")
             st.dataframe(antes_depois.astype(str), hide_index=True, width="stretch")
@@ -203,12 +202,12 @@ def render():
                      "atraso_medio", "atraso_mediano", "severidade", "desvio", "p90", "maximo", "pct_grave",
                      "share_dias_atraso", "share_gasto"]]
         tab.columns = ["fornecedor", "risco", "tier", "país", "pedidos", "% antecip.", "% pontual", "% atrasado", "atraso médio",
-                       "mediana", "severidade", "desvio padrão", "P90", "máx.", "% grave", "% dos dias de atraso", "% do gasto"]
+                       "mediana", "gravidade", "desvio padrão", "P90", "máx.", "% grave", "% dos dias de atraso", "% do gasto"]
         st.dataframe(tab.style.format({"% antecip.": "{:.0%}", "% pontual": "{:.0%}", "% atrasado": "{:.0%}", "atraso médio": "{:.2f}", "mediana": "{:.1f}",
-                                       "severidade": "{:.1f}", "desvio padrão": "{:.1f}", "P90": "{:.1f}", "% grave": "{:.0%}",
+                                       "gravidade": "{:.1f}", "desvio padrão": "{:.1f}", "P90": "{:.1f}", "% grave": "{:.0%}",
                                        "% dos dias de atraso": "{:.1%}", "% do gasto": "{:.1%}"}), hide_index=True, width="stretch")
-        st.caption("Desvio padrão e P90 medem a **imprevisibilidade** do prazo. "
-                   "Fornecedor consistente = desvio baixo; imprevisível = desvio e P90 altos.")
+        st.caption("Quanto maiores o desvio padrão e o P90, **menos previsível** é o prazo do fornecedor. "
+                   "(P90 = o atraso que só 10% das entregas ultrapassam.)")
 
     # ================================================================ 3. Evolução
     with abas[2]:
@@ -229,9 +228,8 @@ def render():
         if len(m) >= 8:
             from scipy import stats as sp
             tau = sp.kendalltau(np.arange(len(m)), m.pct_atrasado)
-            st.caption(f"Tendência da % de atrasadas (Kendall): τ = {br(tau.statistic, 2)}, p = {br(tau.pvalue, 2)}. "
-                       f"{'Sem tendência estatisticamente detectável.' if tau.pvalue > .05 else 'Há tendência estatisticamente detectável.'} "
-                       "Com 24 meses não se justifica modelo de séries temporais (ARIMA/Prophet); a leitura é descritiva.")
+            st.caption(f"{'Não há tendência clara de piora nem de melhora ao longo dos meses.' if tau.pvalue > .05 else 'Há uma tendência clara ao longo dos meses.'} "
+                       f"(Teste de Kendall: τ = {br(tau.statistic, 2)}, p = {br(tau.pvalue, 2)}.) Com 24 meses, a leitura é descritiva.")
         st.markdown("**Por fornecedor** (até 6 escolhidos)")
         esc = sel_forn[:6] if sel_forn else rv.sort_values("severidade", ascending=False).fornecedor.head(3).tolist() + \
             rv.sort_values("severidade").fornecedor.head(1).tolist()
@@ -258,36 +256,35 @@ def render():
         rot = alt.Chart(mm[(mm.risco == "Alto")]).mark_text(align="right", dx=-12, fontSize=11).encode(
             x="pct_atrasado:Q", y="severidade:Q", text="fornecedor:N")
         st.altair_chart((linhas + pontos + rot).properties(height=460, title="Matriz de risco: frequência × gravidade (bolha = % do gasto)"), width="stretch")
-        st.caption(f"Linha vermelha: limite de gravidade (≈ {br(sev_lim, 1)} dias). Linha cinza: mediana da frequência dos 20 fornecedores. "
-                   "Fornecedores fora dos filtros de fornecedor/tier/país aparecem esmaecidos.")
+        st.caption(f"Acima da linha vermelha (≈ {br(sev_lim, 1)} dias), a gravidade foge do normal. A linha cinza é a frequência típica entre os 20 fornecedores. "
+                   "Quem está fora dos filtros aparece esmaecido.")
         top = r.sort_values("dias_atraso_total", ascending=False).head(8)
         st.altair_chart(alt.Chart(top).mark_bar().encode(
             y=alt.Y("fornecedor:N", sort="-x", title=None), x=alt.X("dias_atraso_total:Q", title="Dias de atraso acumulados"),
             color=alt.Color("risco:N", scale=ESC_RISCO, legend=None),
             tooltip=["fornecedor", "risco", alt.Tooltip("dias_atraso_total:Q", format=",.0f"), alt.Tooltip("share_gasto:Q", format=".1%")]
         ).properties(height=260, title="Exposição: onde estão os dias de atraso"), width="stretch")
-        st.caption("O risco mede atraso. Exposição financeira (tamanho da bolha) é lida à parte: a base não traz custo do atraso (multas, "
-                   "frete urgente, ruptura), então **nenhum valor em dinheiro é atribuído aos atrasos**.")
+        st.caption("O risco mede só o atraso. A base não traz o custo do atraso (multas, frete urgente, falta de produto), "
+                   "então **nenhum valor em dinheiro foi estimado**.")
 
     # ================================================================ 10. Insights e recomendações
     with abas[4]:
         alto = r[r.risco == "Alto"].sort_values("severidade", ascending=False)
-        st.markdown("### Leitura dos filtros atuais")
+        st.markdown("### O que os filtros atuais mostram")
         if len(alto):
-            st.success(f"**{', '.join(alto.fornecedor)}** = alto risco no período: atrasam em média **{br(alto.severidade.mean(), 1)} dias** quando atrasam, "
+            st.success(f"**{', '.join(alto.fornecedor)}** estão em alto risco no período: atrasam em média **{br(alto.severidade.mean(), 1)} dias** quando atrasam, "
                        f"somam **{pc(alto.share_dias_atraso.sum())}** dos dias de atraso e **{pc(alto.share_gasto.sum())}** do gasto.")
         else:
             st.info("Nenhum fornecedor classificado como alto risco no período/urgência selecionados.")
         st.markdown("### Principais descobertas")
-        st.caption("\"Insights\" são as descobertas da análise. Estas usam **todos os dados, sem filtros**, e são as mesmas do notebook. "
-                   "A caixa verde acima, ao contrário, muda quando você muda os filtros.")
-        # Números copiados de resultados/insights.csv (tabela técnica logo abaixo).
+        st.caption("Estas usam **todos os dados, sem filtros**, e são as mesmas do notebook. A caixa verde acima muda quando você muda os filtros.")
+        # Números copiados de resultados/insights.csv.
         st.markdown(
             "- ✅ **Atrasar é comum, mas quase sempre por pouco.** 58% das entregas atrasam, e o atraso típico é de 1 dia. Só 14% passam de 3 dias.\n"
             "- ✅ **Três fornecedores concentram o problema.** SUP-04, SUP-17 e SUP-11 atrasam todas as entregas (cerca de 7,6 dias), "
             "somam 59% dos dias de atraso e todos os atrasos graves, com só 16% do gasto. Os outros 17 são parecidos entre si: atrasam por cerca de 2 dias e nenhum tem atraso grave.\n"
             "- ✅ **O problema é permanente.** Em 24 meses não há piora, melhora nem época do ano pior.\n"
-            "- 🔗 **O que explica o atraso é quem entrega.** País e tier parecem pesar, mas a diferença some sem os 3 fornecedores. "
+            "- 🔗 **O que explica o atraso é quem entrega.** País e tier (nível do fornecedor) parecem pesar, mas a diferença some sem os 3 fornecedores. "
             "O fornecedor explica 63% do atraso e as características do pedido, menos de 1%.\n"
             "- ✅ **Esses 3 não cobram mais caro nem rejeitam mais.** Preço, volume e rejeição (2,4%) são iguais aos dos outros, e eles não têm mais pedidos urgentes.\n"
             "- 🔗 **Não achamos ligação com falta de estoque nem com o serviço ao cliente.** Isso não prova que não existe: a base não permite concluir.\n"
@@ -297,16 +294,19 @@ def render():
         st.caption("✅ **Fato** = medido diretamente. 🔗 **Associação** = relação estatística, não prova causa. 💡 **Hipótese** = plausível, mas não medida nesta base.")
         st.markdown("### Recomendações")
         st.markdown(
-            "1. **Plano de ação individual com os fornecedores de alto risco** (metas de prazo, escalonamento, revisão contratual, auditoria de processo). **Alta**\n"
-            "2. **Gestão por fornecedor, não por categoria**: país, tier e fonte única não são bons critérios de atuação. **Alta**\n"
-            "3. **Medir o custo do atraso** (multas, frete urgente, parada de linha, ruptura por pedido) e **ligar compras a remessas**: hoje não é possível atribuir um valor em dinheiro ao atraso. **Alta**\n"
-            "4. **Revisar prazos prometidos** dos crônicos ou negociar prazo realista com penalidade (o atraso estica o contrato em 21% a 108%). Média\n"
-            "5. **Testar a proteção do ROP** nos produtos mais expostos a esses fornecedores (cobertura mediana ~27 dias vs caudas de 10–14 dias; hipótese). Média\n"
-            "6. **Monitoramento simples por fornecedor** (% atrasado, severidade, z robusto) com lista de observação, em vez de modelo pedido a pedido. Média\n"
-            "7. **Avaliar alternativas** para os de alto risco (nenhum é fonte única). Média/Baixa")
+            "1. **Conversar com os fornecedores de alto risco**, com metas de prazo, acompanhamento e, se preciso, revisão do contrato. *Prioridade alta*\n"
+            "2. **Cobrar por fornecedor, não por país ou categoria**: país, nível e fonte única não explicam o atraso. *Alta*\n"
+            "3. **Passar a medir o custo do atraso** (multas, frete urgente, parada de linha, falta de produto) e ligar cada compra à sua entrega. "
+            "Hoje não dá para dizer quanto o atraso custa em dinheiro. *Alta*\n"
+            "4. **Rever os prazos prometidos** por esses fornecedores, ou combinar um prazo realista com penalidade. O atraso estica o prazo combinado em 21% a 108%. *Média*\n"
+            "5. **Testar se o estoque de segurança aguenta** nos produtos mais ligados a esses fornecedores: a cobertura mediana é de cerca de 27 dias e os atrasos mais longos "
+            "chegam a 10–14 dias (hipótese). *Média*\n"
+            "6. **Acompanhar cada fornecedor todo mês** (% de entregas atrasadas e dias de atraso), com uma lista de observação, em vez de um modelo de previsão. *Média*\n"
+            "7. **Avaliar fornecedores alternativos** para os de alto risco (nenhum é fonte única). *Média a baixa*")
         with st.expander("O que foi medido e o que não foi"):
-            st.markdown("- **Medido (fato):** sem prêmio de preço, volume parecido, mesma rejeição, mesma proporção de pedidos urgentes.\n"
-                        "- **Testado, sem evidência:** ruptura de estoque e nível de serviço ao cliente (o desenho dos dados dificilmente detectaria o efeito: "
-                        "todos os produtos são comprados dos mesmos 20 fornecedores e não há ligação compra↔remessa). *Ausência de evidência não é evidência de ausência.*\n"
-                        "- **Hipótese:** exposição de estoque em atrasos de 10–14 dias vs cobertura do ROP.\n"
-                        "- **Não mensurável:** custo financeiro, multas, impacto em planejamento e experiência do cliente.")
+            st.markdown("- **Medido (fato):** preço, volume, rejeição e pedidos urgentes são parecidos entre os fornecedores.\n"
+                        "- **Testado, sem resultado:** falta de estoque e nível de serviço ao cliente. A base dificilmente mostraria esse efeito: "
+                        "todos os produtos vêm dos mesmos 20 fornecedores e não há ligação entre compra e remessa. "
+                        "*Não achar evidência não prova que o efeito não existe.*\n"
+                        "- **Hipótese:** com atrasos de 10 a 14 dias, o estoque de segurança pode não bastar.\n"
+                        "- **Não dá para medir:** custo em dinheiro, multas e impacto no planejamento e na experiência do cliente.")
