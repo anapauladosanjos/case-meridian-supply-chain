@@ -288,7 +288,7 @@ def render():
             "O fornecedor explica 63% do atraso e as características do pedido, menos de 1%.\n"
             "- ✅ **Esses 3 não cobram mais caro nem rejeitam mais.** Preço, volume e rejeição (2,4%) são iguais aos dos outros, e eles não têm mais pedidos urgentes.\n"
             "- 🔗 **Não achamos ligação com falta de estoque nem com o serviço ao cliente.** Isso não prova que não existe: a base não permite concluir.\n"
-            "- 💡 **Possível risco no estoque (hipótese).** O ponto de reposição cobre cerca de 27 dias de demanda, mas atrasos de 10 a 14 dias poderiam passar disso em 13% dos casos. Não foi medido.\n"
+            "- 💡 **Possível risco no estoque (hipótese).** O ponto de reposição (ROP) cobre cerca de 27 dias de demanda, mas atrasos de 10 a 14 dias poderiam passar disso em 13% dos casos. Não foi medido.\n"
             "- ✅ **Não precisa de modelo complicado.** Os modelos de previsão só acertam quando sabem quem é o fornecedor, e uma regra simples por fornecedor funciona igual. "
             "Os atrasos extremos são reais, não erros: tirá-los esconderia o problema.")
         st.caption("✅ **Fato** = medido diretamente. 🔗 **Associação** = relação estatística, não prova causa. 💡 **Hipótese** = plausível, mas não medida nesta base.")

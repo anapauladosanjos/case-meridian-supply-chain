@@ -178,7 +178,7 @@ def _historia():
         with l2c2:
             st.markdown(
                 f"#### 4. 📦 O estoque zerado aumenta no final do ano\n"
-                f"Na análise do estoque, **{pc0(K['abaixo_geral'])}** dos registros estão abaixo do ponto de reposição e "
+                f"Na análise do estoque, **{pc0(K['abaixo_geral'])}** dos registros estão abaixo do ponto de reposição (ROP) e "
                 f"**{pc1(K['ruptura_geral'])}** apresentam estoque zerado.\n\n"
                 f"Esse percentual aumenta no quarto trimestre: passa de **{pc1(K['ruptura_q3'])}** no terceiro trimestre para "
                 f"**{pc1(K['ruptura_q4'])}** no quarto.\n\n"
@@ -357,12 +357,12 @@ with aba4:
     else:
         if KP:
             leitura_topo("No fim do ano faltam mais produtos no estoque, e a categoria mais vendida sofre mais")
-        st.caption("**Ruptura** = produto zerado no armazém. **Ponto de reposição** = nível de estoque em que é hora de pedir mais; "
-                   "\"abaixo do ponto\" = estoque menor que esse nível. Cada semana é uma \"foto\" do estoque: olhamos a proporção das fotos, sem somá-las.")
+        st.caption("**Ruptura** = produto zerado no armazém. **Ponto de reposição (ROP, do inglês *reorder point*)** = nível de estoque em que é hora de pedir mais; "
+                   "\"abaixo do ROP\" = estoque menor que esse nível. Cada semana é uma \"foto\" do estoque: olhamos a proporção das fotos, sem somá-las.")
         em = iv.groupby(["ano", "mes"]).agg(ruptura=("ruptura", "mean"), abaixo=("abaixo_rop", "mean")).reset_index()
         em["ano"] = em["ano"].astype(str)
         met = st.radio("Indicador", ["ruptura", "abaixo"], horizontal=True,
-                       format_func=lambda x: {"ruptura": "% em ruptura", "abaixo": "% abaixo do ponto de reposição"}[x])
+                       format_func=lambda x: {"ruptura": "% em ruptura", "abaixo": "% abaixo do ROP"}[x])
         st.altair_chart(alt.Chart(em).mark_line(point=True).encode(
             x=alt.X("mes:O", title="Mês"), y=alt.Y(f"{met}:Q", axis=alt.Axis(format="%"), title=None),
             color=alt.Color("ano:N", scale=alt.Scale(range=[CINZA, LARANJA])),
@@ -372,7 +372,7 @@ with aba4:
         q4i = em[em["mes"].isin([10, 11, 12])]["ruptura"].mean()
         st.caption(f"Ruptura média: {br(q3 * 100)}% no 3º trimestre e {br(q4i * 100)}% no 4º (com os filtros atuais).")
         cat = iv.groupby("category").agg(abaixo=("abaixo_rop", "mean"), ruptura=("ruptura", "mean")).reset_index()
-        st.subheader("% das posições de estoque abaixo do ponto de reposição, por categoria")
+        st.subheader("% das posições de estoque abaixo do ROP, por categoria")
         st.altair_chart(alt.Chart(cat).mark_bar().encode(
             y=alt.Y("category:N", sort="-x", title=None), x=alt.X("abaixo:Q", axis=alt.Axis(format="%"), title=None),
             color=alt.condition(alt.datum.abaixo > 0.25, alt.value(LARANJA), alt.value(AZUL)),
@@ -380,17 +380,17 @@ with aba4:
         ).properties(height=240), width="stretch")
         sku = (iv.groupby("product_code").agg(abaixo=("abaixo_rop", "mean"), ruptura=("ruptura", "mean"))
                .sort_values("abaixo", ascending=False).head(10).reset_index())
-        st.subheader("10 produtos que mais ficam abaixo do ponto de reposição")
-        st.dataframe(sku.rename(columns={"product_code": "produto", "abaixo": "% abaixo do ponto", "ruptura": "% zerado"})
-                     .style.format({"% abaixo do ponto": "{:.0%}", "% zerado": "{:.0%}"}), hide_index=True,
+        st.subheader("10 produtos que mais ficam abaixo do ROP")
+        st.dataframe(sku.rename(columns={"product_code": "produto", "abaixo": "% abaixo do ROP", "ruptura": "% zerado"})
+                     .style.format({"% abaixo do ROP": "{:.0%}", "% zerado": "{:.0%}"}), hide_index=True,
                      width="stretch")
         if KP:
             leitura_base(
-                f"**{pc0(KP['abaixo_geral'])}** das posições ficam abaixo do ponto de reposição e **{pc1(KP['ruptura_geral'])}** chegam a zero. "
-                f"No 4º trimestre as faltas sobem de {pc1(KP['ruptura_q3'])} para {pc1(KP['ruptura_q4'])}. O ponto de reposição é o mesmo o ano todo, "
-                f"enquanto a demanda muda. Hydraulics ({pc0(KP['hyd_receita_share'])} da receita) tem {pc0(KP['abaixo_cat']['Hydraulics'])} das posições abaixo do ponto.",
-                "Testar pontos de reposição que mudem com a época do ano, começando por Hydraulics e pelos produtos da tabela acima.",
-                "💡 Hipótese: a ligação entre ponto de reposição fixo e faltas é uma explicação possível; os dados mostram que os dois coincidem, não que um causa o outro. "
+                f"**{pc0(KP['abaixo_geral'])}** das posições ficam abaixo do ROP e **{pc1(KP['ruptura_geral'])}** chegam a zero. "
+                f"No 4º trimestre as faltas sobem de {pc1(KP['ruptura_q3'])} para {pc1(KP['ruptura_q4'])}. O ROP é o mesmo o ano todo, "
+                f"enquanto a demanda muda. Hydraulics ({pc0(KP['hyd_receita_share'])} da receita) tem {pc0(KP['abaixo_cat']['Hydraulics'])} das posições abaixo do ROP.",
+                "Testar um ROP que mude com a época do ano, começando por Hydraulics e pelos produtos da tabela acima.",
+                "💡 Hipótese: a ligação entre ROP fixo e faltas é uma explicação possível; os dados mostram que os dois coincidem, não que um causa o outro. "
                 "Nesta base também não achamos ligação entre atrasos de fornecedores e faltas de estoque, mas o desenho dos dados dificilmente a mostraria.")
 
 # ---------------- Atrasos de fornecedores ----------------
@@ -455,11 +455,11 @@ with aba6:
                     f"e em **{pc0(reb2[k_exc])}** desses casos sobra em outro. Transferências cobririam "
                     f"**{pc0(reb2[k_cob])}** do que falta. Além disso, a reposição é fixa o ano todo e a ruptura sobe de "
                     f"{pc1(K['ruptura_q3'])} para {pc1(K['ruptura_q4'])} no 4º trimestre.\n\n"
-                    f"**Proposta:** testar transferências entre armazéns e um ponto de reposição que mude com a época do ano, "
-                    f"começando por **Hydraulics** ({pc0(K['hyd_receita_share'])} da receita, {pc0(K['abaixo_cat']['Hydraulics'])} das posições abaixo do ponto).\n\n"
+                    f"**Proposta:** testar transferências entre armazéns e um ponto de reposição (ROP) que mude com a época do ano, "
+                    f"começando por **Hydraulics** ({pc0(K['hyd_receita_share'])} da receita, {pc0(K['abaixo_cat']['Hydraulics'])} das posições abaixo do ROP).\n\n"
                     f"**Como saber se funcionou:** a ruptura do 4º trimestre cair em relação ao 3º.")
                 st.caption("💡 Hipótese · a reposição fixa é uma explicação possível; os dados mostram que coincidem, não que uma causa a outra. "
-                           "\"Sobra\" = estoque acima de 2× o ponto de reposição.")
+                           "\"Sobra\" = estoque acima de 2× o ROP.")
         with r2c2:
             with st.container(border=True):
                 st.markdown("#### 📉 4. Planejar o ano em cima do calendário")
