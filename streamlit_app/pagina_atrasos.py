@@ -375,12 +375,13 @@ def render():
         mc, mr = res["modelos_classificacao.csv"], res["modelos_regressao.csv"]
         if mc is None or mr is None:
             mc, mr = modelos_na_hora(ped)
-        st.markdown("##### Em uma frase por modelo")
-        st.markdown("- **Regressão logística:** soma ponderada de fatores que vira uma probabilidade; simples e explicável.\n"
-                    "- **Árvore de decisão:** sequência de perguntas sim/não; fácil de mostrar a um gestor.\n"
-                    "- **Random Forest:** muitas árvores votando; capta interações.\n"
-                    "- **Gradient Boosting:** árvores pequenas corrigindo os erros umas das outras; geralmente o mais preciso em tabelas.\n"
-                    "- **Linha de base:** sempre prever a classe mais comum. Um modelo só vale se vencer isso em validação honesta.")
+        with st.expander("Como cada modelo funciona, em palavras simples"):
+            st.markdown(
+                "- **Regressão logística:** dá um peso para cada fator (como país ou tamanho do pedido) e devolve a chance de atraso. É a mais fácil de explicar.\n"
+                "- **Árvore de decisão:** faz uma pergunta de sim ou não atrás da outra, como um fluxograma. Dá para mostrar para qualquer pessoa.\n"
+                "- **Random Forest:** monta várias árvores e deixa todas votarem no resultado.\n"
+                "- **Gradient Boosting:** também usa várias árvores, mas cada uma tenta corrigir o erro da anterior.\n"
+                "- **Linha de base:** um \"modelo\" que sempre chuta o caso mais comum. Serve de régua: se um modelo não passa dele, não ajudou em nada.")
         alvo = st.radio("O que prever?", ["grave (≥ 4 dias)", "atrasado (> 0)"], horizontal=True)
         val = st.radio("Como validar?", ["Temporal (2024→2025)", "Aleatória (5-fold)", "Fornecedor novo (leave-one-supplier-out)"], horizontal=True)
         sub = mc[(mc.alvo == alvo) & (mc.validação == val)].copy()
