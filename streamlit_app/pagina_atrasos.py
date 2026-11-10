@@ -94,7 +94,7 @@ def render():
 
     st.subheader("Atrasos de fornecedores")
     st.markdown(
-        "#### Em 1 minuto\n"
+        "#### Resumindo\n"
         f"- **{pc(K['pct_atr'], 0)} das entregas chegam depois do prometido**, mas quase sempre por poucos dias "
         f"(metade atrasa até {br(K['atraso_mediano'], 0)} dia).\n"
         f"- **O atraso grave (4 dias ou mais) está concentrado em 3 fornecedores**: {', '.join(K['cron_nomes'])}. "
